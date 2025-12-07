@@ -633,115 +633,117 @@ export default function EndpointDetailPage() {
               </span>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <p className="text-gray-600 mb-2">
-              <span className="font-semibold">{endpoint.endpoint_url}</span>
-            </p>
-            <p className="text-sm text-gray-500">Type: {endpoint.endpoint_type}</p>
-            <p className="text-sm text-gray-500">Last synced {getRelativeTime(endpoint.last_sync)}</p>
-          </div>
+          <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+            <div className="mb-6">
+              <p className="text-gray-600 mb-2">
+                <span className="font-semibold">{endpoint.endpoint_url}</span>
+              </p>
+              <p className="text-sm text-gray-500">Type: {endpoint.endpoint_type}</p>
+              <p className="text-sm text-gray-500">Last synced {getRelativeTime(endpoint.last_sync)}</p>
+            </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 text-center bg-gray-50 p-4 rounded-lg border border-gray-200">
-            <div>
-              <p className="text-xs text-gray-600 flex justify-center items-center gap-1">
-                <span 
-                    className="material-symbols-outlined" 
-                    style={{ 
-                        fontSize: '20px', 
-                        color: 'rgb(185, 28, 28)',
-                        lineHeight: '1'
-                    }}>
-                    threat_intelligence
-                </span>
-                Critical
-              </p>
-              <p className="font-medium text-lg text-red-600">{endpoint.total_vulnerabilities.critical}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-600 flex justify-center items-center gap-1">
-                <span 
-                    className="material-symbols-outlined" 
-                    style={{ 
-                        fontSize: '20px', 
-                        color: 'rgb(234, 88, 12)',
-                        lineHeight: '1'
-                    }}>
-                    threat_intelligence
-                </span>
-                High
-              </p>
-              <p className="font-medium text-lg text-orange-600">{endpoint.total_vulnerabilities.high}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-600 flex justify-center items-center gap-1">
-                <span 
-                    className="material-symbols-outlined" 
-                    style={{ 
-                        fontSize: '20px', 
-                        color: 'rgb(202, 138, 4)',
-                        lineHeight: '1'
-                    }}>
-                    threat_intelligence
-                </span>
-                Medium
-              </p>
-              <p className="font-medium text-lg text-yellow-600">{endpoint.total_vulnerabilities.medium}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-600 flex justify-center items-center gap-1">
-                <span 
-                    className="material-symbols-outlined" 
-                    style={{ 
-                        fontSize: '20px', 
-                        color: 'rgb(37, 99, 235)',
-                        lineHeight: '1'
-                    }}>
-                    threat_intelligence
-                </span>
-                Low
-              </p>
-              <p className="font-medium text-lg text-blue-600">{endpoint.total_vulnerabilities.low}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-600 flex justify-center items-center gap-1">
-                <span 
-                    className="material-symbols-outlined" 
-                    style={{ 
-                        fontSize: '20px', 
-                        color: 'rgb(107, 114, 128)',
-                        lineHeight: '1'
-                    }}>
-                    threat_intelligence
-                </span>
-                Total CVEs
-              </p>
-              <div className="flex items-center justify-center gap-2">
-                <p className="font-medium text-lg text-gray-900">
-                  {endpoint.total_vulnerabilities.critical + 
-                   endpoint.total_vulnerabilities.high + 
-                   endpoint.total_vulnerabilities.medium + 
-                   endpoint.total_vulnerabilities.low}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 text-center bg-gray-50 p-4 rounded-lg">
+              <div>
+                <p className="text-xs text-gray-600 flex justify-center items-center gap-1">
+                  <span 
+                      className="material-symbols-outlined" 
+                      style={{ 
+                          fontSize: '20px', 
+                          color: 'rgb(185, 28, 28)',
+                          lineHeight: '1'
+                      }}>
+                      threat_intelligence
+                  </span>
+                  Critical
                 </p>
-                {endpoint.vulnerability_count_delta !== undefined && (
-                  <div className="flex items-center gap-1 px-2 py-0.5 bg-gray-50 rounded text-xs border border-gray-200">
-                    {endpoint.vulnerability_count_delta > 0 ? (
-                      <>
-                        <svg className="w-3 h-3 text-red-600" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.293 7.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L6.707 7.707a1 1 0 01-1.414 0z" clipRule="evenodd" /></svg>
-                        <span className="font-bold text-red-600">{Math.abs(endpoint.vulnerability_count_delta)}</span>
-                      </>
-                    ) : endpoint.vulnerability_count_delta < 0 ? (
-                      <>
-                        <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M14.707 12.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l2.293-2.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                        <span className="font-bold text-green-600">{Math.abs(endpoint.vulnerability_count_delta)}</span>
-                      </>
-                    ) : (
-                      <>
-                        <svg className="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M20 12H4" /></svg>
-                        <span className="font-bold text-blue-600">0</span>
-                      </>
-                    )}
-                  </div>
-                )}
+                <p className="font-medium text-lg text-red-600">{endpoint.total_vulnerabilities.critical}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-600 flex justify-center items-center gap-1">
+                  <span 
+                      className="material-symbols-outlined" 
+                      style={{ 
+                          fontSize: '20px', 
+                          color: 'rgb(234, 88, 12)',
+                          lineHeight: '1'
+                      }}>
+                      threat_intelligence
+                  </span>
+                  High
+                </p>
+                <p className="font-medium text-lg text-orange-600">{endpoint.total_vulnerabilities.high}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-600 flex justify-center items-center gap-1">
+                  <span 
+                      className="material-symbols-outlined" 
+                      style={{ 
+                          fontSize: '20px', 
+                          color: 'rgb(202, 138, 4)',
+                          lineHeight: '1'
+                      }}>
+                      threat_intelligence
+                  </span>
+                  Medium
+                </p>
+                <p className="font-medium text-lg text-yellow-600">{endpoint.total_vulnerabilities.medium}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-600 flex justify-center items-center gap-1">
+                  <span 
+                      className="material-symbols-outlined" 
+                      style={{ 
+                          fontSize: '20px', 
+                          color: 'rgb(37, 99, 235)',
+                          lineHeight: '1'
+                      }}>
+                      threat_intelligence
+                  </span>
+                  Low
+                </p>
+                <p className="font-medium text-lg text-blue-600">{endpoint.total_vulnerabilities.low}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-600 flex justify-center items-center gap-1">
+                  <span 
+                      className="material-symbols-outlined" 
+                      style={{ 
+                          fontSize: '20px', 
+                          color: 'rgb(107, 114, 128)',
+                          lineHeight: '1'
+                      }}>
+                      threat_intelligence
+                  </span>
+                  Total CVEs
+                </p>
+                <div className="flex items-center justify-center gap-2">
+                  <p className="font-medium text-lg text-gray-900">
+                    {endpoint.total_vulnerabilities.critical + 
+                     endpoint.total_vulnerabilities.high + 
+                     endpoint.total_vulnerabilities.medium + 
+                     endpoint.total_vulnerabilities.low}
+                  </p>
+                  {endpoint.vulnerability_count_delta !== undefined && (
+                    <div className="flex items-center gap-1 px-2 py-0.5 bg-gray-50 rounded text-xs">
+                      {endpoint.vulnerability_count_delta > 0 ? (
+                        <>
+                          <svg className="w-3 h-3 text-red-600" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.293 7.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L6.707 7.707a1 1 0 01-1.414 0z" clipRule="evenodd" /></svg>
+                          <span className="font-bold text-red-600">{Math.abs(endpoint.vulnerability_count_delta)}</span>
+                        </>
+                      ) : endpoint.vulnerability_count_delta < 0 ? (
+                        <>
+                          <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M14.707 12.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l2.293-2.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                          <span className="font-bold text-green-600">{Math.abs(endpoint.vulnerability_count_delta)}</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M20 12H4" /></svg>
+                          <span className="font-bold text-blue-600">0</span>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
