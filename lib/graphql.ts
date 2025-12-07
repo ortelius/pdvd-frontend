@@ -3,7 +3,7 @@
 // We use a variable instead of a const so we can update it dynamically
 let activeGraphqlEndpoint: string | null = null
 
-// Helper to get the endpoint. 
+// Helper to get the endpoint.
 // It fetches from /api/config only if we haven't done so yet.
 async function getGraphqlEndpoint(): Promise<string> {
   if (activeGraphqlEndpoint) {
@@ -13,14 +13,14 @@ async function getGraphqlEndpoint(): Promise<string> {
   try {
     // Fetch the configuration from the Next.js API route
     const res = await fetch('/api/config')
-    
+
     if (!res.ok) {
       console.warn(`Failed to fetch /api/config (Status: ${res.status}). Falling back to default.`)
       return '/api/v1/graphql'
     }
 
     const data = await res.json()
-    
+
     // Validate the response contains the expected key
     if (data.graphqlEndpoint) {
       activeGraphqlEndpoint = data.graphqlEndpoint
@@ -96,10 +96,10 @@ export const GET_RELEASE = `
       docker_tag
       docker_sha
       basename
-      build_date 
-      build_id 
-      build_num 
-      build_url 
+      build_date
+      build_id
+      build_num
+      build_url
       dependency_count
       sbom {
         key

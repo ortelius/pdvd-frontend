@@ -66,9 +66,9 @@ export default function EndpointDetailPage() {
   const [endpoint, setEndpoint] = useState<EndpointDetails | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
-  
+
   const endpointName = decodeURIComponent(params.name as string)
 
   // Filter state
@@ -90,7 +90,7 @@ export default function EndpointDetailPage() {
           GET_ENDPOINT_DETAILS,
           { name: endpointName }
         )
-        
+
         setEndpoint(response.endpointDetails)
       } catch (err) {
         console.error('Error fetching endpoint:', err)
@@ -180,7 +180,7 @@ export default function EndpointDetailPage() {
         if (packageFilter && !packageName.toLowerCase().includes(packageFilter.toLowerCase())) {
           return
         }
-        
+
         combinedData.push({
           cve_id: v.cve_id,
           severity: v.severity_rating?.toLowerCase() || 'unknown',
@@ -206,24 +206,24 @@ export default function EndpointDetailPage() {
       <Header searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearch={handleSearch} />
 
       <div className={`px-6 py-6 flex ${isSidebarOpen ? 'gap-6' : 'gap-2'}`}>
-        
+
         <aside className={`flex-shrink-0 transition-all duration-300 ${isSidebarOpen ? 'w-full lg:w-64' : 'w-12'}`}>
-          
-          <div className="sticky top-20"> 
+
+          <div className="sticky top-20">
 
             <div className="bg-white border border-gray-200 rounded-lg p-4">
-              
+
               <div className={`flex items-center justify-between mb-4 ${isSidebarOpen ? '' : 'justify-center'}`}>
                   {isSidebarOpen ? (
                       <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                          <SettingsIcon sx={{ width: 20, height: 20, color: 'rgb(37, 99, 235)' }} /> 
+                          <SettingsIcon sx={{ width: 20, height: 20, color: 'rgb(37, 99, 235)' }} />
                           Filters
                       </h3>
                   ) : (
                       <SettingsIcon sx={{ width: 20, height: 20, color: 'rgb(37, 99, 235)' }} />
                   )}
-                  
-                  <button 
+
+                  <button
                       onClick={() => setIsSidebarOpen(prev => !prev)}
                       className="text-gray-500 hover:text-blue-600 transition-colors"
                       aria-label={isSidebarOpen ? "Collapse Filters" : "Expand Filters"}
@@ -237,7 +237,7 @@ export default function EndpointDetailPage() {
               </div>
 
               <div className={`transition-all duration-300 overflow-hidden ${isSidebarOpen ? 'h-auto opacity-100' : 'h-0 opacity-0'}`}>
-                  
+
                   {(selectedSeverities.length < 5 || packageFilter || searchCVE) && (
                       <div className="flex justify-end mb-4">
                           <button
@@ -253,9 +253,9 @@ export default function EndpointDetailPage() {
                       </div>
                   )}
 
-                  <div className="mb-6"> 
+                  <div className="mb-6">
                       <h4 className="text-md font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                          <SecurityIcon sx={{ width: 16, height: 16, color: 'rgb(22, 163, 74)' }} /> 
+                          <SecurityIcon sx={{ width: 16, height: 16, color: 'rgb(22, 163, 74)' }} />
                           Severity
                       </h4>
                       <div className="space-y-2">
@@ -279,9 +279,9 @@ export default function EndpointDetailPage() {
                       </div>
                   </div>
 
-                  <div className="mb-6"> 
+                  <div className="mb-6">
                       <h4 className="text-md font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                          <Inventory2Icon sx={{ width: 16, height: 16, color: 'rgb(59, 130, 246)' }} /> 
+                          <Inventory2Icon sx={{ width: 16, height: 16, color: 'rgb(59, 130, 246)' }} />
                           Package
                       </h4>
                       <input
@@ -293,12 +293,12 @@ export default function EndpointDetailPage() {
                       />
                   </div>
 
-                  <div className="mb-6"> 
+                  <div className="mb-6">
                       <h4 className="text-md font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                          <span 
-                              className="material-symbols-outlined" 
-                              style={{ 
-                                  fontSize: '20px', 
+                          <span
+                              className="material-symbols-outlined"
+                              style={{
+                                  fontSize: '20px',
                                   color: 'rgb(185, 28, 28)',
                                   lineHeight: '1'
                               }}>
@@ -322,7 +322,7 @@ export default function EndpointDetailPage() {
         </aside>
 
         <main className="flex-1 space-y-6">
-          
+
           <div className="flex items-center gap-4 mb-6">
               <button
                   onClick={() => router.back()}
@@ -353,10 +353,10 @@ export default function EndpointDetailPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 text-center bg-gray-50 p-4 rounded-lg">
               <div>
                 <p className="text-xs text-gray-600 flex justify-center items-center gap-1">
-                  <span 
-                      className="material-symbols-outlined" 
-                      style={{ 
-                          fontSize: '20px', 
+                  <span
+                      className="material-symbols-outlined"
+                      style={{
+                          fontSize: '20px',
                           color: 'rgb(185, 28, 28)',
                           lineHeight: '1'
                       }}>
@@ -368,10 +368,10 @@ export default function EndpointDetailPage() {
               </div>
               <div>
                 <p className="text-xs text-gray-600 flex justify-center items-center gap-1">
-                  <span 
-                      className="material-symbols-outlined" 
-                      style={{ 
-                          fontSize: '20px', 
+                  <span
+                      className="material-symbols-outlined"
+                      style={{
+                          fontSize: '20px',
                           color: 'rgb(234, 88, 12)',
                           lineHeight: '1'
                       }}>
@@ -383,10 +383,10 @@ export default function EndpointDetailPage() {
               </div>
               <div>
                 <p className="text-xs text-gray-600 flex justify-center items-center gap-1">
-                  <span 
-                      className="material-symbols-outlined" 
-                      style={{ 
-                          fontSize: '20px', 
+                  <span
+                      className="material-symbols-outlined"
+                      style={{
+                          fontSize: '20px',
                           color: 'rgb(202, 138, 4)',
                           lineHeight: '1'
                       }}>
@@ -398,10 +398,10 @@ export default function EndpointDetailPage() {
               </div>
               <div>
                 <p className="text-xs text-gray-600 flex justify-center items-center gap-1">
-                  <span 
-                      className="material-symbols-outlined" 
-                      style={{ 
-                          fontSize: '20px', 
+                  <span
+                      className="material-symbols-outlined"
+                      style={{
+                          fontSize: '20px',
                           color: 'rgb(37, 99, 235)',
                           lineHeight: '1'
                       }}>
@@ -413,10 +413,10 @@ export default function EndpointDetailPage() {
               </div>
               <div>
                 <p className="text-xs text-gray-600 flex justify-center items-center gap-1">
-                  <span 
-                      className="material-symbols-outlined" 
-                      style={{ 
-                          fontSize: '20px', 
+                  <span
+                      className="material-symbols-outlined"
+                      style={{
+                          fontSize: '20px',
                           color: 'rgb(107, 114, 128)',
                           lineHeight: '1'
                       }}>
@@ -426,9 +426,9 @@ export default function EndpointDetailPage() {
                 </p>
                 <div className="flex items-center justify-center gap-2">
                   <p className="font-medium text-lg text-gray-900">
-                    {endpoint.total_vulnerabilities.critical + 
-                     endpoint.total_vulnerabilities.high + 
-                     endpoint.total_vulnerabilities.medium + 
+                    {endpoint.total_vulnerabilities.critical +
+                     endpoint.total_vulnerabilities.high +
+                     endpoint.total_vulnerabilities.medium +
                      endpoint.total_vulnerabilities.low}
                   </p>
                   {endpoint.vulnerability_count_delta !== undefined && (
@@ -458,7 +458,7 @@ export default function EndpointDetailPage() {
 
 <section className="mt-6 p-4 border rounded-lg bg-gray-50">
             <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-              <Inventory2Icon sx={{ width: 20, height: 20, color: 'rgb(37, 99, 235)' }} /> 
+              <Inventory2Icon sx={{ width: 20, height: 20, color: 'rgb(37, 99, 235)' }} />
               Release Versions ({endpoint.releases.length})
             </h3>
             <div className="overflow-x-auto border rounded-lg">
@@ -476,8 +476,8 @@ export default function EndpointDetailPage() {
                 <tbody>
                   {endpoint.releases.length > 0 ? (
                     endpoint.releases.map((release, idx) => (
-                      <tr 
-                        key={idx} 
+                      <tr
+                        key={idx}
                         className="hover:bg-gray-50 cursor-pointer"
                         onClick={() => router.push(`/release/${encodeURIComponent(release.release_name)}?version=${encodeURIComponent(release.release_version)}`)}
                       >
@@ -489,9 +489,9 @@ export default function EndpointDetailPage() {
                         </td>
                         <td className="px-4 py-2 align-top whitespace-nowrap text-sm text-right">
                           <span className={`font-bold ${
-                            release.openssf_scorecard_score != null 
-                              ? release.openssf_scorecard_score >= 8 ? 'text-green-600' 
-                                : release.openssf_scorecard_score >= 6 ? 'text-yellow-600' 
+                            release.openssf_scorecard_score != null
+                              ? release.openssf_scorecard_score >= 8 ? 'text-green-600'
+                                : release.openssf_scorecard_score >= 6 ? 'text-yellow-600'
                                 : 'text-red-600'
                               : 'text-gray-400'
                           }`}>
@@ -543,7 +543,7 @@ export default function EndpointDetailPage() {
             </div>
           </section>
 
-          <div className="overflow-auto border rounded-lg max-h-96"> 
+          <div className="overflow-auto border rounded-lg max-h-96">
             {combinedData.length > 0 ? (
               <table className="w-full table-auto min-w-[1000px]">
                 <thead className="bg-gray-100 sticky top-0 z-10">
@@ -573,25 +573,25 @@ export default function EndpointDetailPage() {
                             : 'bg-blue-100 text-blue-800'
                         } flex items-center gap-1 w-fit`}>
                           {row.severity === 'critical' ? (
-                              <span className="material-symbols-outlined" style={{ 
-                                  fontSize: '12px', 
-                                  width: '12px', 
-                                  height: '12px', 
+                              <span className="material-symbols-outlined" style={{
+                                  fontSize: '12px',
+                                  width: '12px',
+                                  height: '12px',
                                   color: 'rgb(185, 28, 28)',
-                                  lineHeight: '1', 
+                                  lineHeight: '1',
                                   marginRight: '4px'
                               }}>
                                   bomb
                               </span>
-                          ) : 
-                           row.severity === 'high' ? <WhatshotIcon sx={{ width: 12, height: 12, color: 'rgb(194, 65, 12)' }} /> : 
-                           row.severity === 'medium' ? <NotificationsIcon sx={{ width: 12, height: 12, color: 'rgb(202, 138, 4)' }} /> : 
+                          ) :
+                           row.severity === 'high' ? <WhatshotIcon sx={{ width: 12, height: 12, color: 'rgb(194, 65, 12)' }} /> :
+                           row.severity === 'medium' ? <NotificationsIcon sx={{ width: 12, height: 12, color: 'rgb(202, 138, 4)' }} /> :
                            <WarningIcon sx={{ width: 12, height: 12, color: 'rgb(29, 78, 216)' }} />} {row.severity.toUpperCase()}
                         </span>
                       </td>
                       <td className="px-4 py-2">{row.score}</td>
                       <td className="px-4 py-2">
-                        <span 
+                        <span
                           className="text-blue-600 hover:text-blue-800 cursor-pointer hover:underline"
                           onClick={() => router.push(`/release/${encodeURIComponent(row.release_name)}?version=${encodeURIComponent(row.release_version)}`)}
                         >
