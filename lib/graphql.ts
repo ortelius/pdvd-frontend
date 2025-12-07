@@ -263,3 +263,43 @@ export const GET_VULNERABILITIES = `
     }
   }
 `
+
+// Endpoint details query
+export const GET_ENDPOINT_DETAILS = `
+  query GetEndpointDetails($name: String!) {
+    endpointDetails(name: $name) {
+      endpoint_name
+      endpoint_url
+      endpoint_type
+      environment
+      status
+      last_sync
+      total_vulnerabilities {
+        critical
+        high
+        medium
+        low
+      }
+      vulnerability_count_delta
+      releases {
+        release_name
+        release_version
+        openssf_scorecard_score
+        dependency_count
+        last_sync
+        vulnerability_count
+        vulnerability_count_delta
+        vulnerabilities {
+          cve_id
+          summary
+          severity_score
+          severity_rating
+          package
+          affected_version
+          full_purl
+          fixed_in
+        }
+      }
+    }
+  }
+`

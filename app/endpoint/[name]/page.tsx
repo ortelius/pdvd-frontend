@@ -1,10 +1,11 @@
 'use client'
 
-import { useParams, useRouter, useSearchParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 
 import Header from '@/components/Header'
 import { getRelativeTime } from '@/lib/dataTransform'
+import { graphqlQuery, GET_ENDPOINT_DETAILS } from '@/lib/graphql'
 
 // Material UI Icon Imports
 import SettingsIcon from '@mui/icons-material/Settings'
@@ -23,6 +24,7 @@ interface EndpointRelease {
   release_version: string
   openssf_scorecard_score?: number
   vulnerability_count: number
+  vulnerability_count_delta?: number
   dependency_count: number
   last_sync: string
   vulnerabilities: Array<{
@@ -34,11 +36,6 @@ interface EndpointRelease {
     fixed_in: string[]
     full_purl?: string
   }>
-  packages: Array<{
-    name: string
-    version: string
-    purl?: string
-  }>
 }
 
 interface EndpointDetails {
@@ -48,7 +45,6 @@ interface EndpointDetails {
   environment: string
   status: string
   last_sync: string
-  release_count: number
   total_vulnerabilities: {
     critical: number
     high: number
@@ -59,256 +55,13 @@ interface EndpointDetails {
   releases: EndpointRelease[]
 }
 
-// Mock data generator for endpoint details
-const generateMockEndpointData = (endpointName: string): EndpointDetails => {
-  const mockReleases: EndpointRelease[] = [
-    {
-      release_name: 'nginx',
-      release_version: '1.25.3',
-      openssf_scorecard_score: 8.7,
-      vulnerability_count: 15,
-      dependency_count: 127,
-      last_sync: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      vulnerabilities: [
-        {
-          cve_id: 'CVE-2024-1001',
-          severity_rating: 'critical',
-          severity_score: 9.8,
-          package: 'pkg:deb/debian/openssl',
-          affected_version: '1.1.1k',
-          fixed_in: ['1.1.1w', '3.0.12'],
-          full_purl: 'pkg:deb/debian/openssl@1.1.1k'
-        },
-        {
-          cve_id: 'CVE-2024-1002',
-          severity_rating: 'high',
-          severity_score: 7.5,
-          package: 'pkg:deb/debian/zlib',
-          affected_version: '1.2.11',
-          fixed_in: ['1.2.13'],
-          full_purl: 'pkg:deb/debian/zlib@1.2.11'
-        },
-        {
-          cve_id: 'CVE-2024-1003',
-          severity_rating: 'high',
-          severity_score: 7.2,
-          package: 'pkg:deb/debian/pcre',
-          affected_version: '8.39',
-          fixed_in: ['8.45'],
-          full_purl: 'pkg:deb/debian/pcre@8.39'
-        },
-        {
-          cve_id: 'CVE-2024-1004',
-          severity_rating: 'medium',
-          severity_score: 5.3,
-          package: 'pkg:deb/debian/libxml2',
-          affected_version: '2.9.10',
-          fixed_in: ['2.9.14'],
-          full_purl: 'pkg:deb/debian/libxml2@2.9.10'
-        },
-        {
-          cve_id: 'CVE-2024-1005',
-          severity_rating: 'medium',
-          severity_score: 5.1,
-          package: 'pkg:deb/debian/curl',
-          affected_version: '7.74.0',
-          fixed_in: ['8.4.0'],
-          full_purl: 'pkg:deb/debian/curl@7.74.0'
-        },
-        {
-          cve_id: 'CVE-2024-1006',
-          severity_rating: 'low',
-          severity_score: 3.7,
-          package: 'pkg:deb/debian/libc6',
-          affected_version: '2.31',
-          fixed_in: ['2.36'],
-          full_purl: 'pkg:deb/debian/libc6@2.31'
-        }
-      ],
-      packages: [
-        { name: 'pkg:deb/debian/openssl', version: '1.1.1k', purl: 'pkg:deb/debian/openssl@1.1.1k' },
-        { name: 'pkg:deb/debian/zlib', version: '1.2.11', purl: 'pkg:deb/debian/zlib@1.2.11' },
-        { name: 'pkg:deb/debian/pcre', version: '8.39', purl: 'pkg:deb/debian/pcre@8.39' },
-        { name: 'pkg:deb/debian/libxml2', version: '2.9.10', purl: 'pkg:deb/debian/libxml2@2.9.10' },
-        { name: 'pkg:deb/debian/curl', version: '7.74.0', purl: 'pkg:deb/debian/curl@7.74.0' },
-        { name: 'pkg:deb/debian/libc6', version: '2.31', purl: 'pkg:deb/debian/libc6@2.31' },
-        { name: 'pkg:deb/debian/bash', version: '5.1', purl: 'pkg:deb/debian/bash@5.1' },
-        { name: 'pkg:deb/debian/coreutils', version: '8.32', purl: 'pkg:deb/debian/coreutils@8.32' }
-      ]
-    },
-    {
-      release_name: 'node',
-      release_version: '20.11.0',
-      openssf_scorecard_score: 7.8,
-      vulnerability_count: 28,
-      dependency_count: 1247,
-      last_sync: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-      vulnerabilities: [
-        {
-          cve_id: 'CVE-2024-2001',
-          severity_rating: 'critical',
-          severity_score: 9.1,
-          package: 'pkg:npm/node',
-          affected_version: '20.11.0',
-          fixed_in: ['20.11.1', '21.0.0'],
-          full_purl: 'pkg:npm/node@20.11.0'
-        },
-        {
-          cve_id: 'CVE-2024-2002',
-          severity_rating: 'critical',
-          severity_score: 8.9,
-          package: 'pkg:npm/npm',
-          affected_version: '10.2.4',
-          fixed_in: ['10.3.0'],
-          full_purl: 'pkg:npm/npm@10.2.4'
-        },
-        {
-          cve_id: 'CVE-2024-2003',
-          severity_rating: 'high',
-          severity_score: 7.8,
-          package: 'pkg:npm/express',
-          affected_version: '4.18.2',
-          fixed_in: ['4.19.0'],
-          full_purl: 'pkg:npm/express@4.18.2'
-        },
-        {
-          cve_id: 'CVE-2024-2004',
-          severity_rating: 'high',
-          severity_score: 7.5,
-          package: 'pkg:npm/lodash',
-          affected_version: '4.17.20',
-          fixed_in: ['4.17.21'],
-          full_purl: 'pkg:npm/lodash@4.17.20'
-        },
-        {
-          cve_id: 'CVE-2024-2005',
-          severity_rating: 'medium',
-          severity_score: 6.1,
-          package: 'pkg:npm/axios',
-          affected_version: '1.5.0',
-          fixed_in: ['1.6.0'],
-          full_purl: 'pkg:npm/axios@1.5.0'
-        },
-        {
-          cve_id: 'CVE-2024-2006',
-          severity_rating: 'medium',
-          severity_score: 5.9,
-          package: 'pkg:npm/react',
-          affected_version: '18.2.0',
-          fixed_in: ['18.3.0'],
-          full_purl: 'pkg:npm/react@18.2.0'
-        },
-        {
-          cve_id: 'CVE-2024-2007',
-          severity_rating: 'low',
-          severity_score: 3.5,
-          package: 'pkg:npm/moment',
-          affected_version: '2.29.4',
-          fixed_in: ['2.30.0'],
-          full_purl: 'pkg:npm/moment@2.29.4'
-        }
-      ],
-      packages: [
-        { name: 'pkg:npm/node', version: '20.11.0', purl: 'pkg:npm/node@20.11.0' },
-        { name: 'pkg:npm/npm', version: '10.2.4', purl: 'pkg:npm/npm@10.2.4' },
-        { name: 'pkg:npm/express', version: '4.18.2', purl: 'pkg:npm/express@4.18.2' },
-        { name: 'pkg:npm/lodash', version: '4.17.20', purl: 'pkg:npm/lodash@4.17.20' },
-        { name: 'pkg:npm/axios', version: '1.5.0', purl: 'pkg:npm/axios@1.5.0' },
-        { name: 'pkg:npm/react', version: '18.2.0', purl: 'pkg:npm/react@18.2.0' },
-        { name: 'pkg:npm/moment', version: '2.29.4', purl: 'pkg:npm/moment@2.29.4' },
-        { name: 'pkg:npm/webpack', version: '5.88.0', purl: 'pkg:npm/webpack@5.88.0' },
-        { name: 'pkg:npm/typescript', version: '5.2.2', purl: 'pkg:npm/typescript@5.2.2' }
-      ]
-    },
-    {
-      release_name: 'postgres',
-      release_version: '16.2',
-      openssf_scorecard_score: 9.5,
-      vulnerability_count: 10,
-      dependency_count: 245,
-      last_sync: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-      vulnerabilities: [
-        {
-          cve_id: 'CVE-2024-3001',
-          severity_rating: 'high',
-          severity_score: 7.9,
-          package: 'pkg:deb/debian/postgresql',
-          affected_version: '16.2',
-          fixed_in: ['16.3'],
-          full_purl: 'pkg:deb/debian/postgresql@16.2'
-        },
-        {
-          cve_id: 'CVE-2024-3002',
-          severity_rating: 'medium',
-          severity_score: 5.5,
-          package: 'pkg:deb/debian/libpq5',
-          affected_version: '16.2',
-          fixed_in: ['16.3'],
-          full_purl: 'pkg:deb/debian/libpq5@16.2'
-        },
-        {
-          cve_id: 'CVE-2024-3003',
-          severity_rating: 'low',
-          severity_score: 3.1,
-          package: 'pkg:deb/debian/postgresql-client',
-          affected_version: '16.2',
-          fixed_in: ['16.3'],
-          full_purl: 'pkg:deb/debian/postgresql-client@16.2'
-        }
-      ],
-      packages: [
-        { name: 'pkg:deb/debian/postgresql', version: '16.2', purl: 'pkg:deb/debian/postgresql@16.2' },
-        { name: 'pkg:deb/debian/libpq5', version: '16.2', purl: 'pkg:deb/debian/libpq5@16.2' },
-        { name: 'pkg:deb/debian/postgresql-client', version: '16.2', purl: 'pkg:deb/debian/postgresql-client@16.2' },
-        { name: 'pkg:deb/debian/openssl', version: '3.0.11', purl: 'pkg:deb/debian/openssl@3.0.11' },
-        { name: 'pkg:deb/debian/readline', version: '8.2', purl: 'pkg:deb/debian/readline@8.2' }
-      ]
-    }
-  ]
-
-  // Calculate total vulnerabilities
-  const totalVulns = {
-    critical: 0,
-    high: 0,
-    medium: 0,
-    low: 0
-  }
-
-  mockReleases.forEach(release => {
-    release.vulnerabilities.forEach(vuln => {
-      const rating = vuln.severity_rating.toLowerCase()
-      if (rating === 'critical') totalVulns.critical++
-      else if (rating === 'high') totalVulns.high++
-      else if (rating === 'medium') totalVulns.medium++
-      else if (rating === 'low') totalVulns.low++
-    })
-  })
-
-  // Calculate total vulnerability count
-  const totalVulnCount = totalVulns.critical + totalVulns.high + totalVulns.medium + totalVulns.low
-  
-  // Generate a random delta (can be positive, negative, or zero)
-  const deltaOptions = [5, 3, -2, -4, 0, 8, -1, 2]
-  const randomDelta = deltaOptions[Math.floor(Math.random() * deltaOptions.length)]
-
-  return {
-    endpoint_name: endpointName,
-    endpoint_url: `https://${endpointName.toLowerCase().replace(/\s+/g, '-')}.example.com`,
-    endpoint_type: 'kubernetes',
-    environment: 'production',
-    status: 'active',
-    last_sync: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    release_count: mockReleases.length,
-    total_vulnerabilities: totalVulns,
-    vulnerability_count_delta: randomDelta,
-    releases: mockReleases
-  }
+interface GetEndpointDetailsResponse {
+  endpointDetails: EndpointDetails
 }
 
 export default function EndpointDetailPage() {
   const params = useParams()
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [searchQuery, setSearchQuery] = useState('')
   const [endpoint, setEndpoint] = useState<EndpointDetails | null>(null)
   const [loading, setLoading] = useState(true)
@@ -333,20 +86,12 @@ export default function EndpointDetailPage() {
         setLoading(true)
         setError(null)
 
-        // TODO: Replace with actual GraphQL query when endpoint query is available
-        // const response = await graphqlQuery<{ endpoint: EndpointDetails }>(
-        //   GET_ENDPOINT_DETAILS,
-        //   { name: endpointName }
-        // )
-        // setEndpoint(response.endpoint)
-
-        // Using mock data for now
-        const mockData = generateMockEndpointData(endpointName)
+        const response = await graphqlQuery<GetEndpointDetailsResponse>(
+          GET_ENDPOINT_DETAILS,
+          { name: endpointName }
+        )
         
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 500))
-        
-        setEndpoint(mockData)
+        setEndpoint(response.endpointDetails)
       } catch (err) {
         console.error('Error fetching endpoint:', err)
         setError(err instanceof Error ? err.message : 'Failed to fetch endpoint data')
@@ -448,43 +193,6 @@ export default function EndpointDetailPage() {
           full_purl: v.full_purl
         })
       })
-
-    // Add clean packages if "clean" filter is selected
-    if (selectedSeverities.includes('clean')) {
-      release.packages.forEach(pkg => {
-        if (packageFilter && !pkg.name.toLowerCase().includes(packageFilter.toLowerCase())) {
-          return
-        }
-
-        const isVulnerable = release.vulnerabilities.some(v => {
-          if (v.full_purl && pkg.purl) {
-            const basePkgPurl = pkg.purl.split('@')[0]
-            const baseVulnPurl = v.full_purl.split('@')[0]
-            
-            if (basePkgPurl === baseVulnPurl) {
-              return v.affected_version === pkg.version
-            }
-          }
-          
-          const vulnPackageName = v.package.split('@')[0]
-          return vulnPackageName === pkg.name && v.affected_version === pkg.version
-        })
-
-        if (!isVulnerable) {
-          combinedData.push({
-            cve_id: '—',
-            severity: 'clean',
-            score: 0,
-            package: pkg.name,
-            version: pkg.version,
-            fixed_in: '—',
-            release_name: release.release_name,
-            release_version: release.release_version,
-            full_purl: pkg.purl
-          })
-        }
-      })
-    }
   })
 
   // Sort by score (highest first), then by package name
@@ -748,7 +456,7 @@ export default function EndpointDetailPage() {
             </div>
           </div>
 
-          <section className="mt-6 p-4 border rounded-lg bg-gray-50">
+<section className="mt-6 p-4 border rounded-lg bg-gray-50">
             <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
               <Inventory2Icon sx={{ width: 20, height: 20, color: 'rgb(37, 99, 235)' }} /> 
               Release Versions ({endpoint.releases.length})
@@ -759,8 +467,8 @@ export default function EndpointDetailPage() {
                   <tr>
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[200px]">Release Name</th>
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Version</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">OpenSSF Score</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Vulnerabilities</th>
+                    <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-32">OpenSSF Score</th>
+                    <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Vulnerabilities</th>
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Dependencies</th>
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">Last Sync</th>
                   </tr>
@@ -779,7 +487,7 @@ export default function EndpointDetailPage() {
                         <td className="px-4 py-2 align-top whitespace-nowrap text-sm text-gray-700">
                           {release.release_version}
                         </td>
-                        <td className="px-4 py-2 align-top whitespace-nowrap text-sm">
+                        <td className="px-4 py-2 align-top whitespace-nowrap text-sm text-right">
                           <span className={`font-bold ${
                             release.openssf_scorecard_score != null 
                               ? release.openssf_scorecard_score >= 8 ? 'text-green-600' 
@@ -790,8 +498,30 @@ export default function EndpointDetailPage() {
                             {release.openssf_scorecard_score != null ? release.openssf_scorecard_score.toFixed(1) : 'N/A'}
                           </span>
                         </td>
-                        <td className="px-4 py-2 align-top whitespace-nowrap text-sm text-gray-700">
-                          {release.vulnerability_count}
+                        <td className="px-4 py-2 align-top whitespace-nowrap text-sm text-gray-700 text-right">
+                          <div className="flex items-center gap-2 justify-end">
+                            <span>{release.vulnerability_count}</span>
+                            {release.vulnerability_count_delta !== undefined && (
+                              <div className="flex items-center gap-1 px-1 py-0.5 bg-gray-50 rounded text-xs">
+                                {release.vulnerability_count_delta > 0 ? (
+                                  <>
+                                    <svg className="w-3 h-3 text-red-600" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.293 7.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L6.707 7.707a1 1 0 01-1.414 0z" clipRule="evenodd" /></svg>
+                                    <span className="font-bold text-red-600">{Math.abs(release.vulnerability_count_delta)}</span>
+                                  </>
+                                ) : release.vulnerability_count_delta < 0 ? (
+                                  <>
+                                    <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M14.707 12.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l2.293-2.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                                    <span className="font-bold text-green-600">{Math.abs(release.vulnerability_count_delta)}</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <svg className="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 12h14" /></svg>
+                                    <span className="font-bold text-blue-600">0</span>
+                                  </>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </td>
                         <td className="px-4 py-2 align-top whitespace-nowrap text-sm text-gray-700">
                           {release.dependency_count}
@@ -833,37 +563,31 @@ export default function EndpointDetailPage() {
                     <tr key={index} className="border-b hover:bg-gray-50">
                       <td className="px-4 py-2">{row.cve_id}</td>
                       <td className="px-4 py-2">
-                        {row.severity === 'clean' ? (
-                          <span className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800 flex items-center gap-1 w-fit">
-                            <StarIcon sx={{ width: 12, height: 12, color: 'rgb(22, 163, 74)' }} /> CLEAN
-                          </span>
-                        ) : (
-                          <span className={`px-2 py-1 rounded text-xs font-medium ${
-                            row.severity === 'critical'
-                              ? 'bg-red-100 text-red-800'
-                              : row.severity === 'high'
-                              ? 'bg-orange-100 text-orange-800'
-                              : row.severity === 'medium'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-blue-100 text-blue-800'
-                          } flex items-center gap-1 w-fit`}>
-                            {row.severity === 'critical' ? (
-                                <span className="material-symbols-outlined" style={{ 
-                                    fontSize: '12px', 
-                                    width: '12px', 
-                                    height: '12px', 
-                                    color: 'rgb(185, 28, 28)',
-                                    lineHeight: '1', 
-                                    marginRight: '4px'
-                                }}>
-                                    bomb
-                                </span>
-                            ) : 
-                             row.severity === 'high' ? <WhatshotIcon sx={{ width: 12, height: 12, color: 'rgb(194, 65, 12)' }} /> : 
-                             row.severity === 'medium' ? <NotificationsIcon sx={{ width: 12, height: 12, color: 'rgb(202, 138, 4)' }} /> : 
-                             <WarningIcon sx={{ width: 12, height: 12, color: 'rgb(29, 78, 216)' }} />} {row.severity.toUpperCase()}
-                          </span>
-                        )}
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                          row.severity === 'critical'
+                            ? 'bg-red-100 text-red-800'
+                            : row.severity === 'high'
+                            ? 'bg-orange-100 text-orange-800'
+                            : row.severity === 'medium'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-blue-100 text-blue-800'
+                        } flex items-center gap-1 w-fit`}>
+                          {row.severity === 'critical' ? (
+                              <span className="material-symbols-outlined" style={{ 
+                                  fontSize: '12px', 
+                                  width: '12px', 
+                                  height: '12px', 
+                                  color: 'rgb(185, 28, 28)',
+                                  lineHeight: '1', 
+                                  marginRight: '4px'
+                              }}>
+                                  bomb
+                              </span>
+                          ) : 
+                           row.severity === 'high' ? <WhatshotIcon sx={{ width: 12, height: 12, color: 'rgb(194, 65, 12)' }} /> : 
+                           row.severity === 'medium' ? <NotificationsIcon sx={{ width: 12, height: 12, color: 'rgb(202, 138, 4)' }} /> : 
+                           <WarningIcon sx={{ width: 12, height: 12, color: 'rgb(29, 78, 216)' }} />} {row.severity.toUpperCase()}
+                        </span>
                       </td>
                       <td className="px-4 py-2">{row.score}</td>
                       <td className="px-4 py-2">
