@@ -8,9 +8,7 @@ import { getRelativeTime } from '@/lib/dataTransform'
 // --- Material UI Icon Imports ---
 import CloseIcon from '@mui/icons-material/Close'
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline'
-import Inventory2Icon from '@mui/icons-material/Inventory2'
-import InventoryIcon from '@mui/icons-material/Inventory'
-import AccessTimeIcon from '@mui/icons-material/AccessTime'
+import Inventory2Icon from '@mui/icons-material/Inventory2' // Used for empty state
 
 interface EndpointsModalProps {
   isOpen: boolean
@@ -54,22 +52,14 @@ export default function EndpointsModal({ isOpen, onClose, releaseName, releaseVe
 
   if (!isOpen) return null
 
+  // Helper for Status Badge Colors (matching snippet styles)
   const getStatusColor = (status: string) => {
     const statusLower = status.toLowerCase()
-    if (statusLower === 'active' || statusLower === 'running') return 'text-green-600 bg-green-50'
-    if (statusLower === 'inactive' || statusLower === 'stopped') return 'text-gray-600 bg-gray-50'
-    if (statusLower === 'error' || statusLower === 'failed') return 'text-red-600 bg-red-50'
-    if (statusLower === 'warning') return 'text-yellow-600 bg-yellow-50'
-    return 'text-blue-600 bg-blue-50'
-  }
-
-  const getEnvironmentColor = (environment: string) => {
-    const envLower = environment.toLowerCase()
-    if (envLower === 'production' || envLower === 'prod') return 'text-red-700 bg-red-100'
-    if (envLower === 'staging' || envLower === 'stage') return 'text-orange-700 bg-orange-100'
-    if (envLower === 'development' || envLower === 'dev') return 'text-blue-700 bg-blue-100'
-    if (envLower === 'test' || envLower === 'testing') return 'text-purple-700 bg-purple-100'
-    return 'text-gray-700 bg-gray-100'
+    if (statusLower === 'active' || statusLower === 'running') return 'text-green-800 bg-green-100'
+    if (statusLower === 'inactive' || statusLower === 'stopped') return 'text-gray-800 bg-gray-100'
+    if (statusLower === 'error' || statusLower === 'failed') return 'text-red-800 bg-red-100'
+    if (statusLower === 'warning') return 'text-yellow-800 bg-yellow-100'
+    return 'text-blue-800 bg-blue-100'
   }
 
   return (
@@ -108,7 +98,6 @@ export default function EndpointsModal({ isOpen, onClose, releaseName, releaseVe
                 </div>
               ) : error ? (
                 <div className="text-center py-12">
-                  {/* Error icon colored red */}
                   <ErrorOutlineIcon sx={{ color: 'rgb(248, 113, 113)' }} className="mx-auto h-12 w-12 text-red-400" />
                   <h3 className="mt-2 text-sm font-medium text-gray-900">Error loading endpoints</h3>
                   <p className="mt-1 text-sm text-gray-500">{error}</p>
@@ -121,43 +110,43 @@ export default function EndpointsModal({ isOpen, onClose, releaseName, releaseVe
                 </div>
               ) : endpoints.length === 0 ? (
                 <div className="text-center py-12">
-                  {/* No endpoints icon colored neutral blue/gray */}
                   <Inventory2Icon sx={{ color: 'rgb(96, 165, 250)' }} className="mx-auto h-12 w-12 text-gray-400" />
                   <h3 className="mt-2 text-sm font-medium text-gray-900">No endpoints found</h3>
                   <p className="mt-1 text-sm text-gray-500">This release is not currently deployed to any endpoints</p>
                 </div>
               ) : (
-                <div className="space-y-3 max-h-96 overflow-y-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[32rem] overflow-y-auto p-1">
                   {endpoints.map((endpoint, index) => (
-                    <div key={index} className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors">
+                    <div 
+                      key={index} 
+                      className="border border-gray-200 rounded-lg p-4 hover:border-gray-400 hover:shadow-md transition-all cursor-pointer bg-white flex flex-col h-full"
+                    >
+                      {/* Top Section: Name and URL */}
                       <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-semibold text-gray-900">{endpoint.endpoint_name}</h4>
-                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${getStatusColor(endpoint.status)}`}>
-                              {endpoint.status}
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-600 mb-2">{endpoint.endpoint_url}</p>
+                        <div className="flex flex-col flex-1">
+                          <h3 className="text-base font-semibold text-blue-600 hover:underline break-words">
+                            {endpoint.endpoint_name}
+                          </h3>
+                          <p className="text-xs text-gray-500 mt-1 break-all line-clamp-1">
+                            {endpoint.endpoint_url}
+                          </p>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-4 text-xs text-gray-500">
+                      {/* Middle Section (Vulnerabilities/Type/Env) REMOVED as requested */}
+
+                      {/* Footer Section: Status */}
+                      <div className="flex items-center gap-4 text-xs text-gray-600 pt-2 border-t border-gray-100 mt-auto">
                         <div className="flex items-center gap-1">
-                          {/* Endpoint Type icon colored gray */}
-                          <InventoryIcon sx={{ color: 'rgb(107, 114, 128)' }} className="w-4 h-4" />
-                          <span>Type: <span className="font-medium text-gray-700">{endpoint.endpoint_type}</span></span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${getEnvironmentColor(endpoint.environment)}`}>
-                            {endpoint.environment}
+                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${getStatusColor(endpoint.status)}`}>
+                            {endpoint.status}
                           </span>
                         </div>
-                        <div className="flex items-center gap-1">
-                          {/* Last Sync icon colored gray */}
-                          <AccessTimeIcon sx={{ color: 'rgb(107, 114, 128)' }} className="w-4 h-4" />
-                          <span>Last sync: <span className="font-medium text-gray-700">{getRelativeTime(endpoint.last_sync)}</span></span>
-                        </div>
+                      </div>
+
+                      {/* Bottom Section: Sync Time */}
+                      <div className="text-xs text-gray-500 mt-2">
+                        Synced {getRelativeTime(endpoint.last_sync)}
                       </div>
                     </div>
                   ))}

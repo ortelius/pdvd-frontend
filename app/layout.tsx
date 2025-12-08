@@ -1,8 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import React from 'react'
-import Header from '@/components/Header'
-import Sidebar from '@/components/Sidebar'
+// import Header from '@/components/Header' <-- REMOVE THIS IMPORT
 
 export const metadata: Metadata = {
   title: 'Ortelius',
@@ -23,17 +22,11 @@ export default function RootLayout({
         />
       </head>    
       <body className="flex flex-col h-screen bg-gray-50 overflow-hidden text-sm">
-         {/* Fixed Header */}
-         <Header />
+         {/* Fixed Header REMOVED - Space Reclaimed */}
          
          <div className="flex flex-1 overflow-hidden">
-            {/* Sidebar: Hidden on small screens, visible on medium+ */}
-            <div className="hidden md:block h-full">
-               <Sidebar />
-            </div>
-
-            {/* Main Content Area */}
-            <main className="flex-1 overflow-y-auto">
+            {/* Main Content Area - Sidebar is handled within children pages */}
+            <main className="flex-1 overflow-y-auto flex">
                {children}
             </main>
          </div>

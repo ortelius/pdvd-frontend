@@ -3,14 +3,12 @@
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useState, useEffect } from 'react'
 
-import Header from '@/components/Header'
+// --- Component Imports ---
+import Sidebar from '@/components/Sidebar' // Added Sidebar Import
 import SyncedEndpoints from '@/components/SyncedEndpoints'
 import { graphqlQuery, GET_RELEASE } from '@/lib/graphql'
 import { GetReleaseResponse, Release } from '@/lib/types'
-import {
-  countVulnerabilitiesBySeverity,
-  getRelativeTime,
-} from '@/lib/dataTransform'
+import { getRelativeTime } from '@/lib/dataTransform'
 
 // --- Material UI Icon Imports ---
 import SettingsIcon from '@mui/icons-material/Settings'
@@ -35,21 +33,19 @@ export default function ReleaseVersionDetailPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  // Search state removed
   const [release, setRelease] = useState<Release | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isEndpointsModalOpen, setIsEndpointsModalOpen] = useState(false)
   
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
-
   const releaseVersion = params.name as string
   const version = searchParams.get('version') || 'latest'
 
   const [vulnerabilities, setVulnerabilities] = useState<Release['vulnerabilities']>([])
   const [packages, setPackages] = useState<Array<{ name: string; version: string; purl?: string }>>([])
 
-  // Filter state
+  // --- Filter State ---
+  // These are your existing state variables, which we will now control via the Sidebar
   const [selectedSeverities, setSelectedSeverities] = useState<string[]>(['critical', 'high', 'medium', 'low', 'clean'])
   const [packageFilter, setPackageFilter] = useState('')
   const [searchCVE, setSearchCVE] = useState('')
@@ -66,7 +62,7 @@ export default function ReleaseVersionDetailPage() {
 
         setVulnerabilities(releaseData.vulnerabilities)
 
-        // Parse packages from SBOM
+        // Parse packages from SBOM for clean packages display
         let pkgData: Array<{ name: string; version: string; purl?: string }> = []
         try {
           if (releaseData.sbom?.content) {
@@ -85,7 +81,7 @@ export default function ReleaseVersionDetailPage() {
                 return {
                   name: identifier,
                   version: c.version || 'unknown',
-                  purl: c.purl || identifier  // Keep full purl for matching
+                  purl: c.purl || identifier
                 }
               })
           }
@@ -104,32 +100,69 @@ export default function ReleaseVersionDetailPage() {
     if (releaseVersion) fetchRelease()
   }, [releaseVersion, version])
 
-  if (loading) return (
-    <div className="min-h-screen bg-white">
-      <Header />
-      <div className="mx-auto py-12 flex justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-gray-600">Loading release details...</p>
-        </div>
+  // --- Sidebar Logic Adapter ---
+  // This function maps the complex Sidebar updater logic to your individual state hooks
+  const handleFilterChange = (updater: any) => {
+    const currentFilters = {
+      vulnerabilityScore: selectedSeverities,
+      openssfScore: [],
+      name: '',
+      packageFilter: packageFilter,
+      searchCVE: searchCVE
+    }
+
+    let newFilters;
+    if (typeof updater === 'function') {
+      newFilters = updater(currentFilters)
+    } else {
+      newFilters = updater
+    }
+
+    // Update local state based on what changed
+    if (newFilters.vulnerabilityScore) setSelectedSeverities(newFilters.vulnerabilityScore)
+    if (newFilters.packageFilter !== undefined) setPackageFilter(newFilters.packageFilter)
+    if (newFilters.searchCVE !== undefined) setSearchCVE(newFilters.searchCVE)
+  }
+
+  // --- Layout Helper for Loading/Error states to include Sidebar ---
+  const renderLayout = (content: React.ReactNode) => (
+    <div className="flex h-screen overflow-hidden bg-white">
+      <Sidebar 
+        filters={{
+          vulnerabilityScore: selectedSeverities,
+          openssfScore: [],
+          name: '',
+          packageFilter: packageFilter,
+          searchCVE: searchCVE
+        }}
+        setFilters={handleFilterChange}
+        selectedCategory="release-detail" // Adjust based on your Sidebar's highlighting logic
+      />
+      <div className="flex-1 overflow-y-auto">
+        {content}
       </div>
     </div>
   )
 
-  if (error || !release) return (
-    <div className="min-h-screen bg-white">
-      <Header />
-      <div className="mx-auto py-12">
-        <h1 className="text-2xl font-bold">Release not found</h1>
-        <p className="mt-2 text-gray-600">{error || 'The requested release could not be found.'}</p>
-        <button onClick={() => router.back()} className="mt-4 text-blue-600 hover:text-blue-700">← Back to search</button>
+  if (loading) return renderLayout(
+    <div className="flex items-center justify-center h-full">
+      <div className="text-center">
+        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <p className="mt-4 text-gray-600">Loading release details...</p>
       </div>
     </div>
   )
 
-  // ... (Data processing logic remains the same) ...
-  // Re-implementing logic to satisfy TypeScript for combinedData calculation
-   const combinedData: Array<{
+  if (error || !release) return renderLayout(
+    <div className="py-12 px-6">
+      <h1 className="text-2xl font-bold">Release not found</h1>
+      <p className="mt-2 text-gray-600">{error || 'The requested release could not be found.'}</p>
+      <button onClick={() => router.back()} className="mt-4 text-blue-600 hover:text-blue-700">← Back to search</button>
+    </div>
+  )
+
+  // --- Data Processing Logic ---
+  const combinedData: Array<{
     cve_id: string
     severity: string
     score: number
@@ -139,7 +172,7 @@ export default function ReleaseVersionDetailPage() {
     full_purl?: string
   }> = []
 
-  // First, add all vulnerable packages (from GraphQL)
+  // 1. Add vulnerable packages
   vulnerabilities
     .filter(v => selectedSeverities.includes(v.severity_rating?.toLowerCase() || 'unknown'))
     .filter(v => !searchCVE || v.cve_id.includes(searchCVE))
@@ -160,7 +193,7 @@ export default function ReleaseVersionDetailPage() {
       })
     })
 
-  // Second, add clean packages (from SBOM) if "clean" filter is selected
+  // 2. Add clean packages
   if (selectedSeverities.includes('clean')) {
     packages.forEach(pkg => {
       if (packageFilter && !pkg.name.toLowerCase().includes(packageFilter.toLowerCase())) {
@@ -175,7 +208,7 @@ export default function ReleaseVersionDetailPage() {
             return v.affected_version === pkg.version
           }
         }
-        const vulnPackageName = v.package.split('@')[0] 
+        const vulnPackageName = v.package.split('@')[0]
         return vulnPackageName === pkg.name && v.affected_version === pkg.version
       })
 
@@ -215,50 +248,31 @@ export default function ReleaseVersionDetailPage() {
   const dependencyCount = release.dependency_count ?? 0
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      <Header />
-      <SyncedEndpoints isOpen={isEndpointsModalOpen} onClose={() => setIsEndpointsModalOpen(false)} releaseName={release.name} releaseVersion={release.version} />
+    <div className="flex h-screen overflow-hidden bg-white">
+      {/* --- SIDEBAR INTEGRATION --- */}
+      <Sidebar 
+        filters={{
+          vulnerabilityScore: selectedSeverities,
+          openssfScore: [], // Not used in this view but required by type usually
+          name: '', 
+          packageFilter: packageFilter,
+          searchCVE: searchCVE
+        }}
+        setFilters={handleFilterChange}
+        selectedCategory="release-detail" 
+      />
 
-      <div className={`px-6 py-6 flex ${isSidebarOpen ? 'gap-6' : 'gap-2'}`}>
-        
-        <aside className={`flex-shrink-0 transition-all duration-300 ${isSidebarOpen ? 'w-full lg:w-64' : 'w-12'}`}>
-          <div className="sticky top-20"> 
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
-              <div className={`flex items-center justify-between mb-4 ${isSidebarOpen ? '' : 'justify-center'}`}>
-                  {isSidebarOpen ? (
-                      <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                          <SettingsIcon sx={{ width: 20, height: 20, color: 'rgb(37, 99, 235)' }} /> 
-                          Filters
-                      </h3>
-                  ) : (
-                      <SettingsIcon sx={{ width: 20, height: 20, color: 'rgb(37, 99, 235)' }} />
-                  )}
-                  
-                  <button 
-                      onClick={() => setIsSidebarOpen(prev => !prev)}
-                      className="text-gray-500 hover:text-blue-600 transition-colors"
-                  >
-                      {isSidebarOpen ? <ChevronLeftIcon sx={{ width: 20, height: 20 }} /> : <ChevronRightIcon sx={{ width: 20, height: 20 }} />}
-                  </button>
-              </div>
+      {/* --- MAIN CONTENT WRAPPER --- */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+        <SyncedEndpoints isOpen={isEndpointsModalOpen} onClose={() => setIsEndpointsModalOpen(false)} releaseName={release.name} releaseVersion={release.version} />
 
-              <div className={`transition-all duration-300 overflow-hidden ${isSidebarOpen ? 'h-auto opacity-100' : 'h-0 opacity-0'}`}>
-                   {/* Filter Inputs Code ... */}
-                   <div className="mb-6">
-                      <h4 className="text-md font-semibold text-gray-900 mb-3 flex items-center gap-2"><SecurityIcon sx={{width:16}} /> Severity</h4>
-                      {/* Checkboxes... */}
-                   </div>
-              </div>
-            </div>
-          </div>
-        </aside>
-
-        <main className="flex-1 space-y-6">
+        <main className="flex-1 p-6 space-y-6">
           
           <div className="flex items-center gap-4 mb-6">
               <button
                   onClick={() => router.back()}
                   className="flex items-center text-blue-600 hover:text-blue-700 transition-colors text-sm font-medium"
+                  aria-label="Go back to previous page"
               >
                   <ArrowBackIcon sx={{ width: 16, height: 16 }} />
                   <span className="ml-1">Back</span>
@@ -268,36 +282,305 @@ export default function ReleaseVersionDetailPage() {
               </h1>
           </div>
 
-          {/* ... Rest of the component (Stats, Tables, etc.) ... */}
-           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 text-center bg-gray-50 p-4 rounded-lg border border-gray-200">
-             {/* Stat Cards... */}
-             <div><p className="font-medium text-lg">{vulnerabilities.length}</p></div>
-             <div><p className="font-medium text-lg">{openssfScore}</p></div>
-             <div><p className="font-medium text-lg">{syncedEndpoints}</p></div>
-             <div><p className="font-medium text-lg">{dependencyCount}</p></div>
-           </div>
+          {/* SUMMARY GRID */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 text-center bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <div>
+              <p className="text-xs text-gray-600 flex justify-center items-center gap-1">
+                <span 
+                    className="material-symbols-outlined" 
+                    style={{ 
+                        fontSize: '20px', 
+                        color: 'rgb(185, 28, 28)',
+                        lineHeight: '1'
+                    }}>
+                    threat_intelligence
+                </span>
+                Vulnerabilities
+              </p>
+              <p className="font-medium text-lg text-gray-900">{vulnerabilities.length}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-600 flex justify-center items-center gap-1"><SecurityIcon sx={{ width: 16, height: 16, color: 'rgb(22, 163, 74)' }} /> OpenSSF Score</p>
+              <p className="font-medium text-lg text-gray-900">{openssfScore}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-600 flex justify-center items-center gap-1"><LinkIcon sx={{ width: 16, height: 16, color: 'rgb(37, 99, 235)' }} /> Synced Endpoints</p>
+              <p className="font-medium text-lg text-gray-900">{syncedEndpoints}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-600 flex justify-center items-center gap-1"><Inventory2Icon sx={{ width: 16, height: 16, color: 'rgb(107, 114, 128)' }} /> Packages</p>
+              <p className="font-medium text-lg text-gray-900">{dependencyCount}</p>
+            </div>
+            
+            {release.sbom?.content && (
+              <div className="flex flex-col items-center justify-center">
+                  <p className="text-xs text-gray-600 flex justify-center items-center gap-1">
+                      <DownloadIcon sx={{ width: 16, height: 16, color: 'rgb(37, 99, 235)' }} /> SBOM
+                  </p>
+                  <button
+                    onClick={downloadSBOM}
+                    className="font-medium text-lg text-gray-900 text-blue-600 hover:text-blue-800 transition-colors bg-transparent border-none p-0 cursor-pointer"
+                  >
+                      Download
+                  </button>
+              </div>
+            )}
+          </div>
 
-           {/* Tables ... */}
-           {/* Render combinedData table ... */}
-           <div className="overflow-auto border rounded-lg max-h-96"> 
-             <table className="w-full table-auto min-w-[700px]">
-                {/* Table Headers and Body */}
-                <thead className="bg-gray-100 sticky top-0 z-10">
-                   <tr>
-                     <th className="px-4 py-2 text-left border-b">CVE ID</th>
-                     {/* ... */}
-                   </tr>
+          {/* SYNCED ENDPOINTS SECTION */}
+          <section className="mt-6 p-4 border rounded-lg bg-gray-50">
+            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+              <LinkIcon sx={{ width: 20, height: 20, color: 'rgb(37, 99, 235)' }} /> 
+              Synced Endpoints ({syncedEndpointsList.length})
+            </h3>
+            <div className="overflow-x-auto border rounded-lg">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[150px]">Endpoint Name</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Environment</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">Last Sync Time</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Status</th>
+                  </tr>
                 </thead>
                 <tbody>
-                   {combinedData.map((row, index) => (
-                      <tr key={index} className="border-b hover:bg-gray-50">
-                         <td className="px-4 py-2">{row.cve_id}</td>
-                         {/* ... */}
+                  {syncedEndpointsList.length > 0 ? (
+                    syncedEndpointsList.map((endpoint, idx) => (
+                      <tr key={idx} className="hover:bg-gray-50">
+                        <td className="px-4 py-2 align-top whitespace-normal text-sm text-blue-600 hover:text-blue-800 cursor-pointer">
+                          {endpoint.endpoint_name}
+                        </td>
+                        <td className="px-4 py-2 align-top whitespace-nowrap text-sm text-gray-700">
+                          {endpoint.environment}
+                        </td>
+                        <td className="px-4 py-2 align-top whitespace-nowrap text-sm text-gray-700">
+                          {endpoint.last_sync ? getRelativeTime(endpoint.last_sync) : '—'}
+                        </td>
+                        <td className="px-4 py-2 align-top whitespace-nowrap text-sm text-gray-700">
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${
+                              endpoint.status === 'active' 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-red-100 text-red-800'
+                            } w-fit`}>
+                            {endpoint.status.toUpperCase()}
+                          </span>
+                        </td>
                       </tr>
-                   ))}
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-8 text-center bg-white">
+                        <p className="text-gray-500 font-medium text-lg">No synced endpoints found for this release.</p>
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
-             </table>
-           </div>
+              </table>
+            </div>
+          </section>
+
+          {/* VULNERABILITY TABLE */}
+          <div className="overflow-auto border rounded-lg max-h-96"> 
+            {combinedData.length > 0 ? (
+              <table className="w-full table-auto min-w-[700px]">
+                <thead className="bg-gray-100 sticky top-0 z-10">
+                  <tr>
+                    <th className="px-4 py-2 text-left border-b text-xs font-bold text-gray-700">CVE ID</th>
+                    <th className="px-4 py-2 text-left border-b text-xs font-bold text-gray-700">Severity</th>
+                    <th className="px-4 py-2 text-left border-b text-xs font-bold text-gray-700">Score</th>
+                    <th className="px-4 py-2 text-left border-b text-xs font-bold text-gray-700">Package</th>
+                    <th className="px-4 py-2 text-left border-b text-xs font-bold text-gray-700">Version</th>
+                    <th className="px-4 py-2 text-left border-b text-xs font-bold text-gray-700">Fixed In</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {combinedData.map((row, index) => (
+                    <tr key={index} className="border-b hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-2 text-sm">{row.cve_id}</td>
+                      <td className="px-4 py-2 text-sm">
+                        {row.severity === 'clean' ? (
+                          <span className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800 flex items-center gap-1 w-fit">
+                            <StarIcon sx={{ width: 12, height: 12, color: 'rgb(22, 163, 74)' }} /> CLEAN
+                          </span>
+                        ) : (
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${
+                            row.severity === 'critical'
+                              ? 'bg-red-100 text-red-800'
+                              : row.severity === 'high'
+                              ? 'bg-orange-100 text-orange-800'
+                              : row.severity === 'medium'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-blue-100 text-blue-800'
+                          } flex items-center gap-1 w-fit`}>
+                            {row.severity === 'critical' ? (
+                                <span className="material-symbols-outlined" style={{ 
+                                    fontSize: '12px', 
+                                    width: '12px', 
+                                    height: '12px', 
+                                    color: 'rgb(185, 28, 28)',
+                                    lineHeight: '1', 
+                                    marginRight: '4px'
+                                }}>
+                                    bomb
+                                </span>
+                            ) : 
+                             row.severity === 'high' ? <WhatshotIcon sx={{ width: 12, height: 12, color: 'rgb(194, 65, 12)' }} /> : 
+                             row.severity === 'medium' ? <NotificationsIcon sx={{ width: 12, height: 12, color: 'rgb(202, 138, 4)' }} /> : 
+                             <WarningIcon sx={{ width: 12, height: 12, color: 'rgb(29, 78, 216)' }} />} {row.severity.toUpperCase()}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2 text-sm">{row.score > 0 ? row.score : '—'}</td>
+                      <td className="px-4 py-2 text-sm text-gray-600 break-all">{row.package}</td>
+                      <td className="px-4 py-2 text-sm text-gray-600">{row.version}</td>
+                      <td className="px-4 py-2 text-sm text-gray-600">{row.fixed_in}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <table className="w-full table-auto min-w-[700px]">
+                <thead className="bg-gray-100 sticky top-0 z-10">
+                  <tr>
+                    <th className="px-4 py-2 text-left border-b">CVE ID</th>
+                    <th className="px-4 py-2 text-left border-b">Severity</th>
+                    <th className="px-4 py-2 text-left border-b">Score</th>
+                    <th className="px-4 py-2 text-left border-b">Package</th>
+                    <th className="px-4 py-2 text-left border-b">Version</th>
+                    <th className="px-4 py-2 text-left border-b">Fixed In</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td colSpan={6} className="px-4 py-8 text-center bg-white">
+                      <p className="text-gray-500 font-medium text-lg">No data found matching current filters.</p>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          {/* SOURCE & BUILD SECTION */}
+          <section className="mt-6 p-4 border rounded-lg bg-gray-50">
+            <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
+                <BuildIcon sx={{ width: 20, height: 20, color: 'rgb(100, 116, 139)' }} />
+                Source & Build Details
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-1 text-sm text-gray-700">
+              
+              <div>
+                <h4 className="text-md font-semibold text-gray-900 mt-2 mb-1 flex items-center gap-2">
+                    <AltRouteIcon sx={{ width: 16, height: 16, color: 'rgb(59, 130, 246)' }} />
+                    Source Control
+                </h4>
+                <ul className="space-y-1">
+                  <li><span className="font-medium">Commit:</span> {release.git_commit?.substring(0,8) || '—'}</li>
+                  <li><span className="font-medium">Branch:</span> {release.git_branch || '—'}</li>
+                  <li><span className="font-medium">Tag:</span> {release.git_tag || '—'}</li>
+                  <li><span className="font-medium">Repo:</span> {release.git_repo || '—'}</li>
+                  <li><span className="font-medium">Org:</span> {release.git_org || '—'}</li>
+                  <li><span className="font-medium">URL:</span> <a href={release.git_url || '#'} className="text-blue-600 truncate block w-full">{release.git_url || '—'}</a></li>
+                  <li><span className="font-medium">Project:</span> {release.git_repo_project || '—'}</li>
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="text-md font-semibold text-gray-900 mt-2 mb-1 flex items-center gap-2">
+                    <Inventory2Icon sx={{ width: 16, height: 16, color: 'rgb(20, 184, 166)' }} />
+                    Container Artifacts
+                </h4>
+                <ul className="space-y-1">
+                  <li><span className="font-medium">Content SHA:</span> {release.content_sha?.substring(0,12) || '—'}</li>
+                  <li><span className="font-medium">Docker Repo:</span> {release.docker_repo || '—'}</li>
+                  <li><span className="font-medium">Docker Tag:</span> {release.docker_tag || '—'}</li>
+                  <li><span className="font-medium">Docker SHA:</span> {release.docker_sha?.substring(0,12) || '—'}</li>
+                  <li><span className="font-medium">Basename:</span> {release.basename || '—'}</li>
+                  <li><span className="font-medium">Commit Verified:</span> {release.git_verify_commit !== undefined ? (release.git_verify_commit ? 'Yes' : 'No') : '—'}</li>
+                  <li><span className="font-medium">Signed Off By:</span> {release.git_signed_off_by || '—'}</li>
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="text-md font-semibold text-gray-900 mt-2 mb-1 flex items-center gap-2">
+                    <HistoryIcon sx={{ width: 16, height: 16, color: 'rgb(124, 58, 237)' }} />
+                    Metrics & Timestamps
+                </h4>
+                <ul className="space-y-1">
+                  <li><span className="font-medium">Commit Timestamp:</span> {release.git_commit_timestamp || '—'}</li>
+                  <li><span className="font-medium">Commit Authors:</span> {release.git_commit_authors || '—'}</li>
+                  <li><span className="font-medium">Committers Count:</span> {release.git_committerscnt || '—'}</li>
+                  <li><span className="font-medium">Total Committers Count:</span> {release.git_total_committerscnt || '—'}</li>
+                  <li><span className="font-medium">Contrib Percentage:</span> {release.git_contrib_percentage || '—'}</li>
+                  <li><span className="font-medium">Lines Added:</span> {release.git_lines_added || '—'}</li>
+                  <li><span className="font-medium">Lines Deleted:</span> {release.git_lines_deleted || '—'}</li>
+                  <li><span className="font-medium">Lines Total:</span> {release.git_lines_total || '—'}</li>
+                  <li><span className="font-medium">Prev Component Commit:</span> {release.git_prev_comp_commit?.substring(0,8) || '—'}</li>
+                </ul>
+              </div>
+
+              <div className="lg:col-span-3 pt-4">
+                <h4 className="text-md font-semibold text-gray-900 mt-2 mb-1 flex items-center gap-2">
+                    <ConstructionIcon sx={{ width: 16, height: 16, color: 'rgb(249, 115, 22)' }} />
+                    Build Environment
+                </h4>
+                <ul className="space-y-1 grid grid-cols-2 md:grid-cols-4">
+                  <li><span className="font-medium">Build Date:</span> {release.build_date || '—'}</li>
+                  <li><span className="font-medium">Build ID:</span> {release.build_id || '—'}</li>
+                  <li><span className="font-medium">Build Number:</span> {release.build_num || '—'}</li>
+                  <li><span className="font-medium">Build URL:</span> <a href={release.build_url || '#'} className="text-blue-600">{release.build_url || '—'}</a></li>
+                </ul>
+              </div>
+
+            </div>
+          </section>
+
+          {/* OPENSSF SCORECARD SECTION */}
+          <section className="mt-6 p-4 border rounded-lg bg-gray-50">
+            <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
+              <SecurityIcon sx={{ width: 20, height: 20, color: 'rgb(22, 163, 74)' }} />
+              OpenSSF Scorecard
+            </h3>
+            
+            {release.scorecard_result ? (
+              <>
+                <p className="text-sm text-gray-600 mb-2">
+                  Aggregate Score: <span className="font-medium text-gray-900">{release.scorecard_result.Score || '—'}</span> (Version: {release.scorecard_result.Scorecard.Version})
+                </p>
+                
+                <div className="overflow-x-auto border rounded-lg mt-4">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[150px]">Check Name</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">Score</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {release.scorecard_result.Checks.map((check, idx) => (
+                        <tr key={idx} className="hover:bg-gray-50">
+                          <td className="px-4 py-2 align-top whitespace-normal text-sm text-gray-900">
+                            {check.Name}
+                          </td>
+                          <td className="px-4 py-2 align-top whitespace-nowrap text-sm text-gray-700">
+                            {check.Score}
+                          </td>
+                          <td className="px-4 py-2 align-top text-sm text-gray-700 break-words max-w-sm">
+                            {check.Reason ?? '—'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            ) : (
+              <div className="py-8 text-center">
+                <p className="text-gray-500 font-medium text-lg">No OpenSSF Scorecard data available for this release.</p>
+              </div>
+            )}
+          </section>
 
         </main>
       </div>
