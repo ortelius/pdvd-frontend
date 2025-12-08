@@ -2,17 +2,11 @@
 
 import Link from 'next/link'
 
-interface HeaderProps {
-  searchQuery: string
-  setSearchQuery: (query: string) => void
-  handleSearch: () => void
-}
-
-export default function Header({ searchQuery, setSearchQuery, handleSearch }: HeaderProps) {
+export default function Header() {
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
       <div className="px-6">
-        <div className="flex items-center h-16">
+        <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2 cursor-pointer mr-8">
             {/* --- ORTELIUS SVG LOGO --- */}
             <svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 115.36 109.69" className="h-10 w-auto">
@@ -34,26 +28,6 @@ export default function Header({ searchQuery, setSearchQuery, handleSearch }: He
             </svg>
             {/* --- END SVG LOGO --- */}
           </Link>
-
-          {/* <nav> block removed */}
-
-          <div className="flex-1 max-w-2xl mx-8">
-            <input
-              type="text"
-              placeholder="Search Ortelius"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              className="w-full px-4 py-2 bg-gray-100 border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div className="flex items-center gap-4">
-            <button className="text-sm text-gray-700 hover:text-gray-900 font-medium">Sign in</button>
-            <button className="px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded-md hover:bg-blue-600 transition-colors">
-              Sign up
-            </button>
-          </div>
         </div>
       </div>
     </header>

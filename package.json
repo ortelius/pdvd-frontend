@@ -13,6 +13,7 @@
     "next": "16.0.7",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "recharts": "^3.5.1",
     "@mui/material": "^7.0.0",
     "@mui/icons-material": "^7.0.0",
     "@emotion/react": "^11.11.4",
@@ -37,5 +38,8 @@
     "postcss": "^8.4.38",
     "tailwindcss": "^4.0.0",
     "typescript": "^5"
+  },
+  "overrides": {
+    "react-is": "^19.0.0"
   }
 }
