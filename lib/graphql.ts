@@ -5,7 +5,7 @@ let activeGraphqlEndpoint: string | null = null
 
 // Helper to get the endpoint.
 // It fetches from /api/config only if we haven't done so yet.
-async function getGraphqlEndpoint(): Promise<string> {
+async function getGraphqlEndpoint (): Promise<string> {
   // Fix: Explicitly check for null
   if (activeGraphqlEndpoint !== null) {
     return activeGraphqlEndpoint
@@ -36,7 +36,7 @@ async function getGraphqlEndpoint(): Promise<string> {
   return '/api/v1/graphql'
 }
 
-export async function graphqlQuery<T>(query: string, variables?: Record<string, any>): Promise<T> {
+export async function graphqlQuery<T> (query: string, variables?: Record<string, any>): Promise<T> {
   // 1. Resolve the endpoint URL dynamically
   const endpoint = await getGraphqlEndpoint()
 

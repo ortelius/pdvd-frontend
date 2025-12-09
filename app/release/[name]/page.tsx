@@ -9,7 +9,7 @@ import SyncedEndpoints from '@/components/SyncedEndpoints'
 import { graphqlQuery, GET_RELEASE } from '@/lib/graphql'
 import { GetReleaseResponse, Release } from '@/lib/types'
 import { getRelativeTime } from '@/lib/dataTransform'
-
+ 
 // --- Material UI Icon Imports ---
 import SecurityIcon from '@mui/icons-material/Security'
 import Inventory2Icon from '@mui/icons-material/Inventory2'
