@@ -20,16 +20,50 @@ import { graphqlQuery, GET_DASHBOARD_VULNERABILITY_TREND } from '@/lib/graphql'
 import { GetVulnerabilityTrendResponse, VulnerabilityTrend } from '@/lib/types'
 
 // --- Material UI Icons ---
-import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment'
 import ScheduleIcon from '@mui/icons-material/Schedule'
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward'
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward'
+import RemoveIcon from '@mui/icons-material/Remove'
+
+// --- New GraphQL Definitions (Add to lib/graphql in production) ---
+const GET_DASHBOARD_GLOBAL_STATUS = `
+  query DashboardGlobalStatus($limit: Int) {
+    dashboardGlobalStatus(limit: $limit) {
+      critical { count delta }
+      high { count delta }
+      medium { count delta }
+      low { count delta }
+      total_count
+      total_delta
+    }
+  }
+`
+
+// --- Types for New Query ---
+interface SeverityMetric {
+  count: number
+  delta: number
+}
+
+interface DashboardGlobalStatus {
+  critical: SeverityMetric
+  high: SeverityMetric
+  medium: SeverityMetric
+  low: SeverityMetric
+  total_count: number
+  total_delta: number
+}
+
+interface GetDashboardGlobalStatusResponse {
+  dashboardGlobalStatus: DashboardGlobalStatus
+}
 
 // --- Color Palette ---
-// Updated to match page.tsx vulnerability table icons
 const COLORS = {
-  low: 'rgb(79, 121, 255)',      // Blue (was #9ca3af)
-  medium: 'rgb(255, 206, 84)',   // Yellow/Gold (was #3b82f6)
-  high: 'rgb(255, 144, 79)',     // Orange (was #FFCC00)
-  critical: 'rgb(185, 28, 28)'  // Red (was #CC0000)
+  low: 'rgb(79, 121, 255)',      // Blue
+  medium: 'rgb(255, 206, 84)',   // Yellow/Gold
+  high: 'rgb(255, 144, 79)',     // Orange
+  critical: 'rgb(185, 28, 28)'   // Red
 }
 
 // Mock Data for mini sparklines and MTTR
@@ -68,10 +102,17 @@ export default function Dashboard() {
   const [loadingTrend, setLoadingTrend] = useState(true)
   const [trendError, setTrendError] = useState<string | null>(null)
 
-  const [currentTotal, setCurrentTotal] = useState(0)
-  const [currentCritical, setCurrentCritical] = useState(0)
+  const [loadingStatus, setLoadingStatus] = useState(true)
+  const [metrics, setMetrics] = useState<DashboardGlobalStatus>({
+    critical: { count: 0, delta: 0 },
+    high: { count: 0, delta: 0 },
+    medium: { count: 0, delta: 0 },
+    low: { count: 0, delta: 0 },
+    total_count: 0,
+    total_delta: 0
+  })
 
-  // Fetch Vulnerability Trend Data - Runs in parallel with other component loads
+  // 1. Fetch Vulnerability Trend Data (For Charts)
   useEffect(() => {
     const fetchTrendData = async () => {
       try {
@@ -80,19 +121,7 @@ export default function Dashboard() {
           GET_DASHBOARD_VULNERABILITY_TREND,
           { days: 90 }
         )
-        
-        // Reverted to accessing dashboardVulnerabilityTrend
-        const data = response.dashboardVulnerabilityTrend
-        setTrendData(data)
-
-        // Update metrics based on the latest data point available
-        if (data && data.length > 0) {
-          const latest = data[data.length - 1]
-          // Sum all 4 severities
-          const total = (latest.critical || 0) + (latest.high || 0) + (latest.medium || 0) + (latest.low || 0)
-          setCurrentTotal(total)
-          setCurrentCritical(latest.critical)
-        }
+        setTrendData(response.dashboardVulnerabilityTrend)
       } catch (err) {
         console.error('Error fetching dashboard trend:', err)
         setTrendError('Failed to load trend data')
@@ -100,11 +129,31 @@ export default function Dashboard() {
         setLoadingTrend(false)
       }
     }
-
     fetchTrendData()
   }, [])
 
-  // Format date for XAxis (e.g., "2025-06-01" -> "Jun 1")
+  // 2. Fetch Endpoint Status Data (For Severity Cards)
+  useEffect(() => {
+    const fetchStatusData = async () => {
+      try {
+        setLoadingStatus(true)
+        const response = await graphqlQuery<GetDashboardGlobalStatusResponse>(
+          GET_DASHBOARD_GLOBAL_STATUS,
+          { limit: 1000 }
+        )
+        if (response.dashboardGlobalStatus) {
+          setMetrics(response.dashboardGlobalStatus)
+        }
+      } catch (err) {
+        console.error('Error fetching dashboard status:', err)
+      } finally {
+        setLoadingStatus(false)
+      }
+    }
+    fetchStatusData()
+  }, [])
+
+  // Format date for XAxis
   const formatDate = (dateStr: string) => {
     try {
       const date = new Date(dateStr)
@@ -114,86 +163,49 @@ export default function Dashboard() {
     }
   }
 
-  // Safe fallback for charts to prevent crash if array is empty
-  const chartData = trendData.length > 0 ? trendData : [{ date: '', critical: 0, high: 0, medium: 0, low: 0 }]
-
   return (
     <div className="space-y-6">
       {/* Top Row: Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         
-        {/* Critical (Swapped to position 1) */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-          <h3 className="text-gray-900 font-medium mb-2">Critical</h3>
-          <div className="flex items-end gap-2">
-             <span className="text-4xl font-bold text-gray-900">
-               {loadingTrend ? (
-                 <span className="inline-block w-16 h-8 bg-gray-200 animate-pulse rounded"></span>
-               ) : (
-                 currentCritical
-               )}
-             </span>
-          </div>
-          <div className="flex items-center gap-2 mt-4">
-             <LocalFireDepartmentIcon className="text-red-500" style={{ fontSize: '1.25rem' }} />
-             <span className="text-gray-600 font-medium">active</span>
-             <div className="h-8 w-24 ml-auto">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData}>
-                    <Line type="monotone" dataKey="critical" stroke="#ef4444" strokeWidth={2} dot={false} />
-                  </LineChart>
-                </ResponsiveContainer>
-             </div>
-          </div>
-        </div>
-
-        {/* Total open vulnerabilities (Swapped to position 2) */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-          <h3 className="text-gray-900 font-medium mb-2">Total open vulnerabilities</h3>
-          <div className="flex items-end justify-between">
-            <span className="text-4xl font-bold text-gray-900">
-              {loadingTrend ? (
-                <span className="inline-block w-16 h-8 bg-gray-200 animate-pulse rounded"></span>
-              ) : (
-                currentTotal
-              )}
-            </span>
-          </div>
-          <div className="h-10 mt-2">
-             <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData}>
-                   <Area 
-                     type="monotone" 
-                     dataKey="low" 
-                     stackId="1" 
-                     stroke={COLORS.low} 
-                     fill={COLORS.low} 
-                   />
-                   <Area 
-                     type="monotone" 
-                     dataKey="medium" 
-                     stackId="1" 
-                     stroke={COLORS.medium} 
-                     fill={COLORS.medium} 
-                   />
-                   <Area 
-                     type="monotone" 
-                     dataKey="high" 
-                     stackId="1" 
-                     stroke={COLORS.high} 
-                     fill={COLORS.high} 
-                   />
-                   <Area 
-                     type="monotone" 
-                     dataKey="critical" 
-                     stackId="1" 
-                     stroke={COLORS.critical} 
-                     fill={COLORS.critical} 
-                   />
-                </AreaChart>
-             </ResponsiveContainer>
-          </div>
-        </div>
+        {/* Severity Metrics (Critical, High, Medium, Low) */}
+        {(['critical', 'high', 'medium', 'low'] as const).map((severity) => {
+          const metric = metrics[severity]
+          const color = COLORS[severity]
+          
+          return (
+            <div key={severity} className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm relative overflow-hidden">
+              {/* Colored accent bar on left */}
+              <div className="absolute left-0 top-0 bottom-0 w-1" style={{ backgroundColor: color }}></div>
+              
+              <h3 className="text-gray-900 font-medium mb-2 capitalize">{severity}</h3>
+              <div className="flex items-end gap-3">
+                <span className="text-4xl font-bold text-gray-900">
+                  {loadingStatus ? (
+                    <span className="inline-block w-16 h-8 bg-gray-200 animate-pulse rounded"></span>
+                  ) : (
+                    metric.count
+                  )}
+                </span>
+                
+                {!loadingStatus && (
+                  <div className={`flex items-center text-sm mb-1 font-medium ${
+                    metric.delta > 0 ? 'text-red-600' : metric.delta < 0 ? 'text-green-600' : 'text-gray-500'
+                  }`}>
+                    {metric.delta > 0 ? (
+                      <ArrowUpwardIcon fontSize="small" />
+                    ) : metric.delta < 0 ? (
+                      <ArrowDownwardIcon fontSize="small" />
+                    ) : (
+                      <RemoveIcon fontSize="small" />
+                    )}
+                    <span className="ml-0.5">{Math.abs(metric.delta)}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        })}
 
         {/* Mean time to remediation */}
         <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
@@ -226,9 +238,9 @@ export default function Dashboard() {
       {/* Middle Row: Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
-        {/* Vulnerabilities over time */}
+        {/* Post-Deployment Vulnerabilties over time */}
         <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-          <h3 className="text-gray-900 font-medium mb-6">Vulnerabilities over time</h3>
+          <h3 className="text-gray-900 font-medium mb-6">Post-Deployment Vulnerabilties over time</h3>
           <div className="h-64">
             {loadingTrend ? (
               <div className="flex items-center justify-center h-full">

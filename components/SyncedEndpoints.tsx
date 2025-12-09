@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { graphqlQuery, GET_AFFECTED_ENDPOINTS } from '@/lib/graphql'
 import { GetAffectedEndpointsResponse, AffectedEndpoint } from '@/lib/types'
 import { getRelativeTime } from '@/lib/dataTransform'
@@ -22,10 +22,25 @@ export default function EndpointsModal({ isOpen, onClose, releaseName, releaseVe
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Ref to track the last fetched parameters to prevent duplicate calls (e.g. React Strict Mode)
+  const lastFetchParams = useRef<string | null>(null)
+
   useEffect(() => {
-    if (isOpen) {
+    // Construct a unique key for the current request parameters
+    const currentParamsKey = `${releaseName}:${releaseVersion}`
+
+    // Only fetch if open AND parameters have changed since the last successful fetch init
+    if (isOpen && lastFetchParams.current !== currentParamsKey) {
+      lastFetchParams.current = currentParamsKey
       fetchEndpoints()
     }
+
+    // If modal is closed, reset the ref so it can refetch when opened again
+    if (!isOpen) {
+      lastFetchParams.current = null
+    }
+    
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, releaseName, releaseVersion])
 
   const fetchEndpoints = async () => {
@@ -45,9 +60,17 @@ export default function EndpointsModal({ isOpen, onClose, releaseName, releaseVe
     } catch (err) {
       console.error('Error fetching endpoints:', err)
       setError(err instanceof Error ? err.message : 'Failed to fetch endpoints')
+      // Reset params ref on error so user can try again
+      lastFetchParams.current = null
     } finally {
       setLoading(false)
     }
+  }
+
+  // Wrapper for manual retry to manage the ref
+  const handleRetry = () => {
+    lastFetchParams.current = `${releaseName}:${releaseVersion}`
+    fetchEndpoints()
   }
 
   if (!isOpen) return null
@@ -102,7 +125,7 @@ export default function EndpointsModal({ isOpen, onClose, releaseName, releaseVe
                   <h3 className="mt-2 text-sm font-medium text-gray-900">Error loading endpoints</h3>
                   <p className="mt-1 text-sm text-gray-500">{error}</p>
                   <button
-                    onClick={fetchEndpoints}
+                    onClick={handleRetry}
                     className="mt-4 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700"
                   >
                     Retry
