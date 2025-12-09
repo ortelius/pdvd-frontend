@@ -16,6 +16,10 @@ import {
   ReferenceLine
 } from 'recharts'
 
+// --- Material UI Icons ---
+import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment'
+import ScheduleIcon from '@mui/icons-material/Schedule'
+
 // Mock Data for "Vulnerabilities over time"
 const areaData = [
   { name: 'Jan 1', Low: 70, Medium: 50, High: 80, Critical: 10 },
@@ -90,7 +94,8 @@ export default function Dashboard() {
              <span className="text-sm text-red-600 font-medium mb-1">↑ 12%</span>
           </div>
           <div className="flex items-center gap-2 mt-4">
-             <span className="material-symbols-outlined text-red-500 text-xl">local_fire_department</span>
+             {/* REPLACED: span with LocalFireDepartmentIcon */}
+             <LocalFireDepartmentIcon className="text-red-500" style={{ fontSize: '1.25rem' }} />
              <span className="text-gray-600 font-medium">123 active</span>
              <div className="h-8 w-24 ml-auto">
                 <ResponsiveContainer width="100%" height="100%">
@@ -107,7 +112,8 @@ export default function Dashboard() {
           <h3 className="text-gray-900 font-medium mb-2">Mean time to remediation</h3>
           <span className="text-4xl font-bold text-gray-900">12.5 days</span>
           <div className="flex items-center gap-2 mt-4 text-gray-500">
-             <span className="material-symbols-outlined text-orange-400">schedule</span>
+             {/* REPLACED: span with ScheduleIcon for consistency */}
+             <ScheduleIcon className="text-orange-400" />
              <span className="text-sm">Target: 7 days</span>
              <div className="h-8 w-24 ml-auto">
                 <ResponsiveContainer width="100%" height="100%">
