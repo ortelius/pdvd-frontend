@@ -133,8 +133,6 @@ export default function EndpointsModal({ isOpen, onClose, releaseName, releaseVe
                         </div>
                       </div>
 
-                      {/* Middle Section (Vulnerabilities/Type/Env) REMOVED as requested */}
-
                       {/* Footer Section: Status */}
                       <div className="flex items-center gap-4 text-xs text-gray-600 pt-2 border-t border-gray-100 mt-auto">
                         <div className="flex items-center gap-1">

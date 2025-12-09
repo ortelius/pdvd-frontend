@@ -4,14 +4,13 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useState, useEffect } from 'react'
 
 // --- Component Imports ---
-import Sidebar from '@/components/Sidebar' // Added Sidebar Import
+import Sidebar from '@/components/Sidebar'
 import SyncedEndpoints from '@/components/SyncedEndpoints'
 import { graphqlQuery, GET_RELEASE } from '@/lib/graphql'
 import { GetReleaseResponse, Release } from '@/lib/types'
 import { getRelativeTime } from '@/lib/dataTransform'
 
 // --- Material UI Icon Imports ---
-import SettingsIcon from '@mui/icons-material/Settings'
 import SecurityIcon from '@mui/icons-material/Security'
 import Inventory2Icon from '@mui/icons-material/Inventory2'
 import DownloadIcon from '@mui/icons-material/Download'
@@ -22,11 +21,10 @@ import BuildIcon from '@mui/icons-material/Build'
 import AltRouteIcon from '@mui/icons-material/AltRoute'
 import HistoryIcon from '@mui/icons-material/History'
 import ConstructionIcon from '@mui/icons-material/Construction'
-import ChevronRightIcon from '@mui/icons-material/ChevronRight'
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import WhatshotIcon from '@mui/icons-material/Whatshot'
 import NotificationsIcon from '@mui/icons-material/Notifications'
+import BugReportIcon from '@mui/icons-material/BugReport'
 
 export default function ReleaseVersionDetailPage() {
   const params = useParams()
@@ -45,7 +43,6 @@ export default function ReleaseVersionDetailPage() {
   const [packages, setPackages] = useState<Array<{ name: string; version: string; purl?: string }>>([])
 
   // --- Filter State ---
-  // These are your existing state variables, which we will now control via the Sidebar
   const [selectedSeverities, setSelectedSeverities] = useState<string[]>(['critical', 'high', 'medium', 'low', 'clean'])
   const [packageFilter, setPackageFilter] = useState('')
   const [searchCVE, setSearchCVE] = useState('')
@@ -62,7 +59,6 @@ export default function ReleaseVersionDetailPage() {
 
         setVulnerabilities(releaseData.vulnerabilities)
 
-        // Parse packages from SBOM for clean packages display
         let pkgData: Array<{ name: string; version: string; purl?: string }> = []
         try {
           if (releaseData.sbom?.content) {
@@ -100,8 +96,6 @@ export default function ReleaseVersionDetailPage() {
     if (releaseVersion) fetchRelease()
   }, [releaseVersion, version])
 
-  // --- Sidebar Logic Adapter ---
-  // This function maps the complex Sidebar updater logic to your individual state hooks
   const handleFilterChange = (updater: any) => {
     const currentFilters = {
       vulnerabilityScore: selectedSeverities,
@@ -118,15 +112,14 @@ export default function ReleaseVersionDetailPage() {
       newFilters = updater
     }
 
-    // Update local state based on what changed
     if (newFilters.vulnerabilityScore) setSelectedSeverities(newFilters.vulnerabilityScore)
     if (newFilters.packageFilter !== undefined) setPackageFilter(newFilters.packageFilter)
     if (newFilters.searchCVE !== undefined) setSearchCVE(newFilters.searchCVE)
   }
 
-  // --- Layout Helper for Loading/Error states to include Sidebar ---
+  // --- UPDATED: Added w-full to ensure container fills layout width ---
   const renderLayout = (content: React.ReactNode) => (
-    <div className="flex h-screen overflow-hidden bg-white">
+    <div className="flex h-screen overflow-hidden bg-white w-full">
       <Sidebar 
         filters={{
           vulnerabilityScore: selectedSeverities,
@@ -136,7 +129,7 @@ export default function ReleaseVersionDetailPage() {
           searchCVE: searchCVE
         }}
         setFilters={handleFilterChange}
-        selectedCategory="release-detail" // Adjust based on your Sidebar's highlighting logic
+        selectedCategory="release-detail"
       />
       <div className="flex-1 overflow-y-auto">
         {content}
@@ -161,7 +154,6 @@ export default function ReleaseVersionDetailPage() {
     </div>
   )
 
-  // --- Data Processing Logic ---
   const combinedData: Array<{
     cve_id: string
     severity: string
@@ -172,7 +164,6 @@ export default function ReleaseVersionDetailPage() {
     full_purl?: string
   }> = []
 
-  // 1. Add vulnerable packages
   vulnerabilities
     .filter(v => selectedSeverities.includes(v.severity_rating?.toLowerCase() || 'unknown'))
     .filter(v => !searchCVE || v.cve_id.includes(searchCVE))
@@ -193,7 +184,6 @@ export default function ReleaseVersionDetailPage() {
       })
     })
 
-  // 2. Add clean packages
   if (selectedSeverities.includes('clean')) {
     packages.forEach(pkg => {
       if (packageFilter && !pkg.name.toLowerCase().includes(packageFilter.toLowerCase())) {
@@ -248,12 +238,12 @@ export default function ReleaseVersionDetailPage() {
   const dependencyCount = release.dependency_count ?? 0
 
   return (
-    <div className="flex h-screen overflow-hidden bg-white">
-      {/* --- SIDEBAR INTEGRATION --- */}
+    // --- UPDATED: Added w-full to ensure container fills layout width ---
+    <div className="flex h-screen overflow-hidden bg-white w-full">
       <Sidebar 
         filters={{
           vulnerabilityScore: selectedSeverities,
-          openssfScore: [], // Not used in this view but required by type usually
+          openssfScore: [], 
           name: '', 
           packageFilter: packageFilter,
           searchCVE: searchCVE
@@ -262,7 +252,6 @@ export default function ReleaseVersionDetailPage() {
         selectedCategory="release-detail" 
       />
 
-      {/* --- MAIN CONTENT WRAPPER --- */}
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         <SyncedEndpoints isOpen={isEndpointsModalOpen} onClose={() => setIsEndpointsModalOpen(false)} releaseName={release.name} releaseVersion={release.version} />
 
@@ -286,15 +275,7 @@ export default function ReleaseVersionDetailPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 text-center bg-gray-50 p-4 rounded-lg border border-gray-200">
             <div>
               <p className="text-xs text-gray-600 flex justify-center items-center gap-1">
-                <span 
-                    className="material-symbols-outlined" 
-                    style={{ 
-                        fontSize: '20px', 
-                        color: 'rgb(185, 28, 28)',
-                        lineHeight: '1'
-                    }}>
-                    threat_intelligence
-                </span>
+                <BugReportIcon sx={{ width: 16, height: 16, color: 'rgb(185, 28, 28)' }} />
                 Vulnerabilities
               </p>
               <p className="font-medium text-lg text-gray-900">{vulnerabilities.length}</p>
@@ -337,10 +318,10 @@ export default function ReleaseVersionDetailPage() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-100">
                   <tr>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[150px]">Endpoint Name</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Environment</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">Last Sync Time</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Status</th>
+                    <th className="px-4 py-2 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-[150px]">Endpoint Name</th>
+                    <th className="px-4 py-2 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-32">Environment</th>
+                    <th className="px-4 py-2 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-40">Last Sync Time</th>
+                    <th className="px-4 py-2 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-24">Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -385,12 +366,12 @@ export default function ReleaseVersionDetailPage() {
               <table className="w-full table-auto min-w-[700px]">
                 <thead className="bg-gray-100 sticky top-0 z-10">
                   <tr>
-                    <th className="px-4 py-2 text-left border-b text-xs font-bold text-gray-700">CVE ID</th>
-                    <th className="px-4 py-2 text-left border-b text-xs font-bold text-gray-700">Severity</th>
-                    <th className="px-4 py-2 text-left border-b text-xs font-bold text-gray-700">Score</th>
-                    <th className="px-4 py-2 text-left border-b text-xs font-bold text-gray-700">Package</th>
-                    <th className="px-4 py-2 text-left border-b text-xs font-bold text-gray-700">Version</th>
-                    <th className="px-4 py-2 text-left border-b text-xs font-bold text-gray-700">Fixed In</th>
+                    <th className="px-4 py-2 text-left border-b text-xs font-bold text-gray-700 uppercase tracking-wider">CVE ID</th>
+                    <th className="px-4 py-2 text-left border-b text-xs font-bold text-gray-700 uppercase tracking-wider">Severity</th>
+                    <th className="px-4 py-2 text-left border-b text-xs font-bold text-gray-700 uppercase tracking-wider">Score</th>
+                    <th className="px-4 py-2 text-left border-b text-xs font-bold text-gray-700 uppercase tracking-wider">Package</th>
+                    <th className="px-4 py-2 text-left border-b text-xs font-bold text-gray-700 uppercase tracking-wider">Version</th>
+                    <th className="px-4 py-2 text-left border-b text-xs font-bold text-gray-700 uppercase tracking-wider">Fixed In</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -413,16 +394,7 @@ export default function ReleaseVersionDetailPage() {
                               : 'bg-blue-100 text-blue-800'
                           } flex items-center gap-1 w-fit`}>
                             {row.severity === 'critical' ? (
-                                <span className="material-symbols-outlined" style={{ 
-                                    fontSize: '12px', 
-                                    width: '12px', 
-                                    height: '12px', 
-                                    color: 'rgb(185, 28, 28)',
-                                    lineHeight: '1', 
-                                    marginRight: '4px'
-                                }}>
-                                    bomb
-                                </span>
+                                <BugReportIcon sx={{ width: 12, height: 12, color: 'rgb(185, 28, 28)' }} />
                             ) : 
                              row.severity === 'high' ? <WhatshotIcon sx={{ width: 12, height: 12, color: 'rgb(194, 65, 12)' }} /> : 
                              row.severity === 'medium' ? <NotificationsIcon sx={{ width: 12, height: 12, color: 'rgb(202, 138, 4)' }} /> : 
@@ -552,9 +524,9 @@ export default function ReleaseVersionDetailPage() {
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-100">
                       <tr>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[150px]">Check Name</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">Score</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
+                        <th className="px-4 py-2 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-[150px]">Check Name</th>
+                        <th className="px-4 py-2 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-16">Score</th>
+                        <th className="px-4 py-2 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Reason</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">

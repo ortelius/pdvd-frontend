@@ -153,7 +153,6 @@ export default function EndpointDetailPage() {
     full_purl?: string
   }> = []
 
-  // FIX: Added safe navigation operator (?.) to prevent crash if releases is null/undefined
   endpoint.releases?.forEach(release => {
     release.vulnerabilities
       .filter(v => filters.selectedSeverities.includes(v.severity_rating?.toLowerCase() || 'unknown'))
@@ -272,61 +271,61 @@ export default function EndpointDetailPage() {
           </div>
         </div>
         
-        <section className="mt-6 p-4 border rounded-lg bg-gray-50">
-          <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">Release Versions ({endpoint.releases?.length || 0})</h3>
-          <div className="overflow-x-auto border rounded-lg">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Release Name</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Version</th>
-                  <th className="px-4 py-2 text-right text-xs font-medium text-gray-700">OpenSSF Score</th>
-                  <th className="px-4 py-2 text-right text-xs font-medium text-gray-700">Vulnerabilities</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Dependencies</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Last Sync</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white">
-                {endpoint.releases?.map((release, idx) => (
-                  <tr key={idx} onClick={() => router.push(`/release/${encodeURIComponent(release.release_name)}?version=${encodeURIComponent(release.release_version)}`)} className="hover:bg-gray-50 cursor-pointer">
-                    <td className="px-4 py-2 text-sm text-blue-600">{release.release_name}</td>
-                    <td className="px-4 py-2 text-sm text-gray-700">{release.release_version}</td>
-                    <td className="px-4 py-2 text-sm text-right">{release.openssf_scorecard_score ?? 'N/A'}</td>
-                    <td className="px-4 py-2 text-sm text-right">{release.vulnerability_count}</td>
-                    <td className="px-4 py-2 text-sm text-gray-700">{release.dependency_count}</td>
-                    <td className="px-4 py-2 text-sm text-gray-700">{getRelativeTime(release.last_sync)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <div className="overflow-auto border rounded-lg max-h-96 mt-6">
-          <table className="w-full table-auto min-w-[1000px]">
+        <h3 className="text-lg font-semibold mt-6 mb-3 flex items-center gap-2">Release Versions ({endpoint.releases?.length || 0})</h3>
+        <div className="overflow-auto border rounded-lg max-h-96">
+          <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-100 sticky top-0 z-10">
               <tr>
-                <th className="px-4 py-2 text-left border-b">CVE ID</th>
-                <th className="px-4 py-2 text-left border-b">Severity</th>
-                <th className="px-4 py-2 text-left border-b">Score</th>
-                <th className="px-4 py-2 text-left border-b">Release</th>
-                <th className="px-4 py-2 text-left border-b">Release Version</th>
-                <th className="px-4 py-2 text-left border-b">Package</th>
-                <th className="px-4 py-2 text-left border-b">Package Version</th>
-                <th className="px-4 py-2 text-left border-b">Fixed In</th>
+                {/* UPDATED HEADER STYLES */}
+                <th className="px-4 py-2 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Release Name</th>
+                <th className="px-4 py-2 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Version</th>
+                <th className="px-4 py-2 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">OpenSSF Score</th>
+                <th className="px-4 py-2 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">Vulnerabilities</th>
+                <th className="px-4 py-2 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Dependencies</th>
+                <th className="px-4 py-2 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Last Sync</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="bg-white">
+              {endpoint.releases?.map((release, idx) => (
+                <tr key={idx} onClick={() => router.push(`/release/${encodeURIComponent(release.release_name)}?version=${encodeURIComponent(release.release_version)}`)} className="hover:bg-gray-50 cursor-pointer">
+                  <td className="px-4 py-2 text-sm text-blue-600">{release.release_name}</td>
+                  <td className="px-4 py-2 text-sm text-gray-700">{release.release_version}</td>
+                  <td className="px-4 py-2 text-sm text-right">{release.openssf_scorecard_score ?? 'N/A'}</td>
+                  <td className="px-4 py-2 text-sm text-right">{release.vulnerability_count}</td>
+                  <td className="px-4 py-2 text-sm text-gray-700">{release.dependency_count}</td>
+                  <td className="px-4 py-2 text-sm text-gray-700">{getRelativeTime(release.last_sync)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="overflow-auto border rounded-lg max-h-96 mt-6">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-100 sticky top-0 z-10">
+              <tr>
+                {/* UPDATED HEADER STYLES */}
+                <th className="px-4 py-2 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">CVE ID</th>
+                <th className="px-4 py-2 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Severity</th>
+                <th className="px-4 py-2 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Score</th>
+                <th className="px-4 py-2 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Release</th>
+                <th className="px-4 py-2 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Release Version</th>
+                <th className="px-4 py-2 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Package</th>
+                <th className="px-4 py-2 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Package Version</th>
+                <th className="px-4 py-2 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Fixed In</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white">
               {combinedData.map((row, index) => (
                 <tr key={index} className="border-b hover:bg-gray-50">
-                  <td className="px-4 py-2">{row.cve_id}</td>
-                  <td className="px-4 py-2">{row.severity}</td>
-                  <td className="px-4 py-2">{row.score}</td>
-                  <td className="px-4 py-2">{row.release_name}</td>
-                  <td className="px-4 py-2">{row.release_version}</td>
-                  <td className="px-4 py-2">{row.package}</td>
-                  <td className="px-4 py-2">{row.version}</td>
-                  <td className="px-4 py-2">{row.fixed_in}</td>
+                  <td className="px-4 py-2 text-sm text-gray-700">{row.cve_id}</td>
+                  <td className="px-4 py-2 text-sm text-gray-700">{row.severity}</td>
+                  <td className="px-4 py-2 text-sm text-gray-700">{row.score}</td>
+                  <td className="px-4 py-2 text-sm text-gray-700">{row.release_name}</td>
+                  <td className="px-4 py-2 text-sm text-gray-700">{row.release_version}</td>
+                  <td className="px-4 py-2 text-sm text-gray-700">{row.package}</td>
+                  <td className="px-4 py-2 text-sm text-gray-700">{row.version}</td>
+                  <td className="px-4 py-2 text-sm text-gray-700">{row.fixed_in}</td>
                 </tr>
               ))}
             </tbody>

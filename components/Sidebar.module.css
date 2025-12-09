@@ -1,0 +1,50 @@
+.sidebar {
+  height: 100vh;
+  background-color: #2c3e50;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  transition: width 0.3s ease;
+  overflow-x: hidden;
+  white-space: nowrap;
+  z-index: 1000;
+}
+
+.expanded { width: 240px; }
+.collapsed { width: 60px; }
+
+.header { padding: 10px; }
+
+.menu {
+  list-style: none;
+  padding: 0;
+  margin-top: 20px;
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  padding: 15px 20px;
+  color: #ecf0f1;
+  text-decoration: none;
+}
+
+.link:hover { background-color: #34495e; }
+
+.icon {
+  font-size: 1.2rem;
+  min-width: 24px;
+}
+
+.label {
+  margin-left: 10px;
+  animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

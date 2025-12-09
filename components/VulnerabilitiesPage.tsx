@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import Header from '@/components/Header'
+import Sidebar from '@/components/Sidebar'
 import { Mitigation } from '@/lib/types'
 import { graphqlQuery, GET_VULNERABILITIES } from '@/lib/graphql'
 
@@ -12,13 +12,20 @@ interface GetVulnerabilitiesResponse {
 
 export default function VulnerabilitiesPage() {
   const router = useRouter()
-  // Search state removed
+  
+  const [filters, setFilters] = useState({
+    vulnerabilityScore: [] as string[],
+    openssfScore: [] as string[],
+    name: '',
+    status: [] as string[],
+    environment: [] as string[],
+    endpointType: [] as string[],
+  })
+
   const [vulnerabilities, setVulnerabilities] = useState<Mitigation[]>([])
   const [filteredVulnerabilities, setFilteredVulnerabilities] = useState<Mitigation[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [severityFilter, setSeverityFilter] = useState<string[]>([])
-  const [localSearchQuery, setLocalSearchQuery] = useState('') // Kept local search if desired, but removed from Header props
 
   useEffect(() => {
     const fetchVulnerabilities = async () => {
@@ -47,27 +54,27 @@ export default function VulnerabilitiesPage() {
   useEffect(() => {
     let filtered = vulnerabilities
 
-    // Apply severity filter
-    if (severityFilter.length > 0) {
+    if (filters.vulnerabilityScore.length > 0) {
+      const selectedSeverities = filters.vulnerabilityScore.filter(s => s !== 'clean')
+      
+      if (selectedSeverities.length > 0) {
+        filtered = filtered.filter(vuln => 
+          selectedSeverities.some(f => vuln.severity_rating.toLowerCase() === f.toLowerCase())
+        )
+      }
+    }
+
+    if (filters.name) {
+      const q = filters.name.toLowerCase()
       filtered = filtered.filter(vuln => 
-        severityFilter.some(f => vuln.severity_rating.toLowerCase() === f.toLowerCase())
+        vuln.cve_id.toLowerCase().includes(q) || 
+        vuln.summary?.toLowerCase().includes(q) ||
+        vuln.package?.toLowerCase().includes(q)
       )
     }
     
-    // Note: Global search bar removed. 
-    // If you want to keep filtering logic, you can add a local search bar here,
-    // otherwise the filtered list just reflects the severity filters.
-    
     setFilteredVulnerabilities(filtered)
-  }, [severityFilter, vulnerabilities])
-
-  const toggleSeverityFilter = (severity: string) => {
-    setSeverityFilter(prev =>
-      prev.includes(severity)
-        ? prev.filter(s => s !== severity)
-        : [...prev, severity]
-    )
-  }
+  }, [filters, vulnerabilities])
 
   const getSeverityColor = (rating: string) => {
     switch (rating.toLowerCase()) {
@@ -86,99 +93,86 @@ export default function VulnerabilitiesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white">
-        <Header />
-        <div className="container mx-auto px-6 py-12">
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <p className="mt-4 text-gray-600">Loading vulnerabilities...</p>
-            </div>
+      <>
+        <Sidebar filters={filters} setFilters={setFilters} selectedCategory="plugin" />
+        <div className="flex-1 flex items-center justify-center p-6 bg-white">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <p className="mt-4 text-gray-600">Loading vulnerabilities...</p>
           </div>
         </div>
-      </div>
+      </>
     )
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-white">
-        <Header />
-        <div className="container mx-auto px-6 py-12">
-          <h1 className="text-2xl font-bold">Error loading vulnerabilities</h1>
-          <p className="mt-2 text-gray-600">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-4 text-blue-600 hover:text-blue-700"
-          >
-            Retry
-          </button>
+      <>
+        <Sidebar filters={filters} setFilters={setFilters} selectedCategory="plugin" />
+        <div className="flex-1 p-6 bg-white">
+          <div className="max-w-7xl mx-auto py-12">
+            <h1 className="text-2xl font-bold text-red-600">Error loading vulnerabilities</h1>
+            <p className="mt-2 text-gray-600">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-4 text-blue-600 hover:text-blue-700 font-medium"
+            >
+              Retry
+            </button>
+          </div>
         </div>
-      </div>
+      </>
     )
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <Header />
+    <>
+      <Sidebar 
+        filters={filters} 
+        setFilters={setFilters} 
+        selectedCategory="plugin" 
+      />
 
-      <div className="container mx-auto px-6 py-6 max-w-7xl">
-        {/* ... Rest of content ... */}
-         <div className="mb-6">
+      {/* Removed 'container mx-auto max-w-7xl' to remove the large left gap */}
+      <div className="flex-1 px-6 py-6 overflow-y-auto bg-white">
+        
+        <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900">Vulnerabilities</h1>
           <p className="text-gray-600 mt-2">Security threats across your infrastructure</p>
-        </div>
-
-        {/* Filters */}
-        <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
-           {/* Severity Filters buttons ... */}
-           <h3 className="text-sm font-semibold text-gray-700 mb-3">Filter by Severity</h3>
-           <div className="flex flex-wrap gap-2">
-            {['critical', 'high', 'medium', 'low'].map((severity) => (
-              <button
-                key={severity}
-                onClick={() => toggleSeverityFilter(severity)}
-                className={`px-3 py-1.5 rounded text-sm font-medium border transition-colors ${
-                  severityFilter.includes(severity)
-                    ? getSeverityColor(severity)
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                }`}
-              >
-                {severity.charAt(0).toUpperCase() + severity.slice(1)}
-              </button>
-            ))}
-            {severityFilter.length > 0 && (
-              <button
-                onClick={() => setSeverityFilter([])}
-                className="px-3 py-1.5 rounded text-sm font-medium text-gray-600 hover:text-gray-900"
-              >
-                Clear filters
-              </button>
-            )}
-           </div>
+          <p className="text-xs text-gray-400 mt-1">
+            Showing {filteredVulnerabilities.length} result{filteredVulnerabilities.length !== 1 ? 's' : ''}
+          </p>
         </div>
         
-        {/* Vulnerability Cards Grid ... */}
         {filteredVulnerabilities.length === 0 ? (
-          <div className="text-center py-12">
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No vulnerabilities found</h3>
+          <div className="text-center py-12 border rounded-lg bg-gray-50">
+            <h3 className="text-sm font-medium text-gray-900">No vulnerabilities found</h3>
+            <p className="text-xs text-gray-500 mt-1">Try adjusting your filters</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredVulnerabilities.map((vuln) => (
-              <div key={`${vuln.cve_id}-${vuln.package}`} className="border border-gray-200 rounded-lg p-4 bg-white">
-                 {/* Card Content */}
-                 <div className="flex items-start justify-between mb-3">
-                   <h3 className="text-base font-semibold text-blue-600">{vuln.cve_id}</h3>
-                   <span className={`px-2 py-1 rounded text-xs font-bold border ${getSeverityColor(vuln.severity_rating)}`}>{vuln.severity_rating}</span>
-                 </div>
-                 <p className="text-sm text-gray-700 mb-3 line-clamp-2">{vuln.summary}</p>
-                 {/* ... */}
+              <div key={`${vuln.cve_id}-${vuln.package}`} className="border border-gray-200 rounded-lg p-4 bg-white hover:border-gray-400 transition-colors">
+                  <div className="flex items-start justify-between mb-3">
+                    <h3 className="text-base font-semibold text-blue-600 hover:underline cursor-pointer">
+                      {vuln.cve_id}
+                    </h3>
+                    <span className={`px-2 py-1 rounded text-xs font-bold border ${getSeverityColor(vuln.severity_rating)}`}>
+                      {vuln.severity_rating.toUpperCase()}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-700 mb-3 line-clamp-2" title={vuln.summary}>
+                    {vuln.summary || 'No summary available.'}
+                  </p>
+                  <div className="text-xs text-gray-600 border-t pt-3 mt-auto">
+                    <div><span className="font-medium">Package:</span> <span className="break-all">{vuln.package}</span></div>
+                    {vuln.affected_version && <div><span className="font-medium">Version:</span> {vuln.affected_version}</div>}
+                  </div>
               </div>
             ))}
           </div>
         )}
       </div>
-    </div>
+    </>
   )
 }
