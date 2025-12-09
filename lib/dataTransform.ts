@@ -86,7 +86,8 @@ export function transformAffectedReleasesToImageData (
     }, new Date(0))
 
     // Calculate total vulnerabilities from vulnerability_count field
-    const totalVulnerabilities = firstRelease.vulnerability_count || 0
+    // Fix: Use nullish coalescing operator (??) to handle nullable number safely
+    const totalVulnerabilities = firstRelease.vulnerability_count ?? 0
     
     // Get vulnerability count delta (can be positive, negative, zero, or null)
     const vulnerabilityCountDelta = firstRelease.vulnerability_count_delta !== undefined 

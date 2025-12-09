@@ -6,7 +6,8 @@ let activeGraphqlEndpoint: string | null = null
 // Helper to get the endpoint.
 // It fetches from /api/config only if we haven't done so yet.
 async function getGraphqlEndpoint(): Promise<string> {
-  if (activeGraphqlEndpoint) {
+  // Fix: Explicitly check for null
+  if (activeGraphqlEndpoint !== null) {
     return activeGraphqlEndpoint
   }
 
@@ -22,7 +23,8 @@ async function getGraphqlEndpoint(): Promise<string> {
     const data = await res.json()
 
     // Validate the response contains the expected key
-    if (data.graphqlEndpoint) {
+    // Fix: Explicitly check type to avoid 'Unexpected any value' error
+    if (typeof data.graphqlEndpoint === 'string') {
       activeGraphqlEndpoint = data.graphqlEndpoint
       return activeGraphqlEndpoint as string
     }
