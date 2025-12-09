@@ -305,3 +305,16 @@ export const GET_ENDPOINT_DETAILS = `
     }
   }
 `
+
+// Dashboard Trend Query - Updated
+export const GET_DASHBOARD_VULNERABILITY_TREND = `
+  query GetDashboardVulnerabilityTrend($days: Int) {
+    dashboardVulnerabilityTrend(days: $days) {
+      date
+      critical
+      high
+      medium
+      low
+    }
+  }
+`

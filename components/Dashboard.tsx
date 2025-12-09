@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import {
   AreaChart,
   Area,
@@ -16,23 +16,21 @@ import {
   ReferenceLine
 } from 'recharts'
 
+import { graphqlQuery, GET_DASHBOARD_VULNERABILITY_TREND } from '@/lib/graphql'
+import { GetVulnerabilityTrendResponse, VulnerabilityTrend } from '@/lib/types'
+
 // --- Material UI Icons ---
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment'
 import ScheduleIcon from '@mui/icons-material/Schedule'
 
-// Mock Data for "Vulnerabilities over time"
-const areaData = [
-  { name: 'Jan 1', Low: 70, Medium: 50, High: 80, Critical: 10 },
-  { name: 'Jan 8', Low: 75, Medium: 55, High: 75, Critical: 15 },
-  { name: 'Jan 15', Low: 90, Medium: 55, High: 80, Critical: 12 },
-  { name: 'Jan 22', Low: 80, Medium: 50, High: 80, Critical: 18 },
-  { name: 'Feb 1', Low: 100, Medium: 60, High: 90, Critical: 20 },
-  { name: 'Feb 15', Low: 90, Medium: 70, High: 85, Critical: 25 },
-  { name: 'Mar 1', Low: 105, Medium: 70, High: 90, Critical: 22 },
-  { name: 'Mar 15', Low: 125, Medium: 100, High: 95, Critical: 30 },
-  { name: 'Apr 1', Low: 110, Medium: 80, High: 100, Critical: 28 },
-  { name: 'Apr 15', Low: 120, Medium: 95, High: 105, Critical: 35 },
-]
+// --- Color Palette ---
+// Updated to match page.tsx vulnerability table icons
+const COLORS = {
+  low: 'rgb(79, 121, 255)',      // Blue (was #9ca3af)
+  medium: 'rgb(255, 206, 84)',   // Yellow/Gold (was #3b82f6)
+  high: 'rgb(255, 144, 79)',     // Orange (was #FFCC00)
+  critical: 'rgb(185, 28, 28)'  // Red (was #CC0000)
+}
 
 // Mock Data for mini sparklines and MTTR
 const lineData = [
@@ -66,44 +64,134 @@ const barData = [
 ]
 
 export default function Dashboard() {
+  const [trendData, setTrendData] = useState<VulnerabilityTrend[]>([])
+  const [loadingTrend, setLoadingTrend] = useState(true)
+  const [trendError, setTrendError] = useState<string | null>(null)
+
+  const [currentTotal, setCurrentTotal] = useState(0)
+  const [currentCritical, setCurrentCritical] = useState(0)
+
+  // Fetch Vulnerability Trend Data - Runs in parallel with other component loads
+  useEffect(() => {
+    const fetchTrendData = async () => {
+      try {
+        setLoadingTrend(true)
+        const response = await graphqlQuery<GetVulnerabilityTrendResponse>(
+          GET_DASHBOARD_VULNERABILITY_TREND,
+          { days: 90 }
+        )
+        
+        // Reverted to accessing dashboardVulnerabilityTrend
+        const data = response.dashboardVulnerabilityTrend
+        setTrendData(data)
+
+        // Update metrics based on the latest data point available
+        if (data && data.length > 0) {
+          const latest = data[data.length - 1]
+          // Sum all 4 severities
+          const total = (latest.critical || 0) + (latest.high || 0) + (latest.medium || 0) + (latest.low || 0)
+          setCurrentTotal(total)
+          setCurrentCritical(latest.critical)
+        }
+      } catch (err) {
+        console.error('Error fetching dashboard trend:', err)
+        setTrendError('Failed to load trend data')
+      } finally {
+        setLoadingTrend(false)
+      }
+    }
+
+    fetchTrendData()
+  }, [])
+
+  // Format date for XAxis (e.g., "2025-06-01" -> "Jun 1")
+  const formatDate = (dateStr: string) => {
+    try {
+      const date = new Date(dateStr)
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    } catch {
+      return dateStr
+    }
+  }
+
+  // Safe fallback for charts to prevent crash if array is empty
+  const chartData = trendData.length > 0 ? trendData : [{ date: '', critical: 0, high: 0, medium: 0, low: 0 }]
+
   return (
     <div className="space-y-6">
       {/* Top Row: Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         
-        {/* Total open vulnerabilities */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-          <h3 className="text-gray-900 font-medium mb-2">Total open vulnerabilities</h3>
-          <div className="flex items-end justify-between">
-            <span className="text-4xl font-bold text-gray-900">342</span>
-          </div>
-          <div className="h-10 mt-2">
-             <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={lineData}>
-                   <Line type="monotone" dataKey="days" stroke="#eab308" strokeWidth={2} dot={false} />
-                </LineChart>
-             </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Critical */}
+        {/* Critical (Swapped to position 1) */}
         <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
           <h3 className="text-gray-900 font-medium mb-2">Critical</h3>
           <div className="flex items-end gap-2">
-             <span className="text-4xl font-bold text-gray-900">123</span>
-             <span className="text-sm text-red-600 font-medium mb-1">↑ 12%</span>
+             <span className="text-4xl font-bold text-gray-900">
+               {loadingTrend ? (
+                 <span className="inline-block w-16 h-8 bg-gray-200 animate-pulse rounded"></span>
+               ) : (
+                 currentCritical
+               )}
+             </span>
           </div>
           <div className="flex items-center gap-2 mt-4">
-             {/* REPLACED: span with LocalFireDepartmentIcon */}
              <LocalFireDepartmentIcon className="text-red-500" style={{ fontSize: '1.25rem' }} />
-             <span className="text-gray-600 font-medium">123 active</span>
+             <span className="text-gray-600 font-medium">active</span>
              <div className="h-8 w-24 ml-auto">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={lineData}>
-                    <Line type="monotone" dataKey="days" stroke="#ef4444" strokeWidth={2} dot={false} />
+                  <LineChart data={chartData}>
+                    <Line type="monotone" dataKey="critical" stroke="#ef4444" strokeWidth={2} dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
              </div>
+          </div>
+        </div>
+
+        {/* Total open vulnerabilities (Swapped to position 2) */}
+        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+          <h3 className="text-gray-900 font-medium mb-2">Total open vulnerabilities</h3>
+          <div className="flex items-end justify-between">
+            <span className="text-4xl font-bold text-gray-900">
+              {loadingTrend ? (
+                <span className="inline-block w-16 h-8 bg-gray-200 animate-pulse rounded"></span>
+              ) : (
+                currentTotal
+              )}
+            </span>
+          </div>
+          <div className="h-10 mt-2">
+             <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData}>
+                   <Area 
+                     type="monotone" 
+                     dataKey="low" 
+                     stackId="1" 
+                     stroke={COLORS.low} 
+                     fill={COLORS.low} 
+                   />
+                   <Area 
+                     type="monotone" 
+                     dataKey="medium" 
+                     stackId="1" 
+                     stroke={COLORS.medium} 
+                     fill={COLORS.medium} 
+                   />
+                   <Area 
+                     type="monotone" 
+                     dataKey="high" 
+                     stackId="1" 
+                     stroke={COLORS.high} 
+                     fill={COLORS.high} 
+                   />
+                   <Area 
+                     type="monotone" 
+                     dataKey="critical" 
+                     stackId="1" 
+                     stroke={COLORS.critical} 
+                     fill={COLORS.critical} 
+                   />
+                </AreaChart>
+             </ResponsiveContainer>
           </div>
         </div>
 
@@ -112,7 +200,6 @@ export default function Dashboard() {
           <h3 className="text-gray-900 font-medium mb-2">Mean time to remediation</h3>
           <span className="text-4xl font-bold text-gray-900">12.5 days</span>
           <div className="flex items-center gap-2 mt-4 text-gray-500">
-             {/* REPLACED: span with ScheduleIcon for consistency */}
              <ScheduleIcon className="text-orange-400" />
              <span className="text-sm">Target: 7 days</span>
              <div className="h-8 w-24 ml-auto">
@@ -143,29 +230,93 @@ export default function Dashboard() {
         <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
           <h3 className="text-gray-900 font-medium mb-6">Vulnerabilities over time</h3>
           <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={areaData}
-                margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-              >
-                <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#f3f4f6" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#6b7280', fontSize: 12}} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#6b7280', fontSize: 12}} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                />
-                <Area type="monotone" dataKey="Low" stackId="1" stroke="none" fill="#dbeafe" fillOpacity={1} />
-                <Area type="monotone" dataKey="Medium" stackId="1" stroke="none" fill="#fef9c3" fillOpacity={1} />
-                <Area type="monotone" dataKey="High" stackId="1" stroke="none" fill="#ffedd5" fillOpacity={1} />
-                <Area type="monotone" dataKey="Critical" stackId="1" stroke="none" fill="#fee2e2" fillOpacity={1} />
-              </AreaChart>
-            </ResponsiveContainer>
+            {loadingTrend ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              </div>
+            ) : trendError ? (
+              <div className="flex items-center justify-center h-full text-red-500 text-sm">
+                {trendError}
+              </div>
+            ) : trendData.length === 0 ? (
+              <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+                No trend data available
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart
+                  data={trendData}
+                  margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                >
+                  <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#f3f4f6" />
+                  <XAxis 
+                    dataKey="date" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{fill: '#6b7280', fontSize: 12}} 
+                    tickFormatter={formatDate}
+                    minTickGap={30}
+                  />
+                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#6b7280', fontSize: 12}} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    labelFormatter={(label) => new Date(label).toLocaleDateString()}
+                  />
+                  {/* Stacked Areas: Low on bottom, Critical on top */}
+                  <Area 
+                    type="monotone" 
+                    dataKey="low" 
+                    stackId="1" 
+                    stroke="none" 
+                    fill={COLORS.low} 
+                    fillOpacity={1} 
+                    name="Low"
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="medium" 
+                    stackId="1" 
+                    stroke="none" 
+                    fill={COLORS.medium} 
+                    fillOpacity={1} 
+                    name="Medium"
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="high" 
+                    stackId="1" 
+                    stroke="none" 
+                    fill={COLORS.high} 
+                    fillOpacity={1} 
+                    name="High"
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="critical" 
+                    stackId="1" 
+                    stroke="none" 
+                    fill={COLORS.critical} 
+                    fillOpacity={1} 
+                    name="Critical"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
           </div>
+          {/* Legend */}
           <div className="flex flex-wrap justify-center gap-4 mt-4">
-             <div className="flex items-center gap-2 text-sm text-gray-600"><span className="w-3 h-3 rounded-full bg-red-100 border border-red-200"></span> Critical</div>
-             <div className="flex items-center gap-2 text-sm text-gray-600"><span className="w-3 h-3 rounded-full bg-orange-100 border border-orange-200"></span> High</div>
-             <div className="flex items-center gap-2 text-sm text-gray-600"><span className="w-3 h-3 rounded-full bg-yellow-100 border border-yellow-200"></span> Medium</div>
-             <div className="flex items-center gap-2 text-sm text-gray-600"><span className="w-3 h-3 rounded-full bg-blue-100 border border-blue-200"></span> Low</div>
+             <div className="flex items-center gap-2 text-sm text-gray-600">
+               <span className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS.critical }}></span> Critical
+             </div>
+             <div className="flex items-center gap-2 text-sm text-gray-600">
+               <span className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS.high }}></span> High
+             </div>
+             <div className="flex items-center gap-2 text-sm text-gray-600">
+               <span className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS.medium }}></span> Medium
+             </div>
+             <div className="flex items-center gap-2 text-sm text-gray-600">
+               <span className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS.low }}></span> Low
+             </div>
           </div>
         </div>
 

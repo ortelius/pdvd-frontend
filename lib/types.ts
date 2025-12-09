@@ -211,3 +211,16 @@ export interface ImageData {
   total_vulnerabilities: number
   vulnerability_count_delta?: number
 }
+
+// Updated Types for Dashboard Trend
+export interface VulnerabilityTrend {
+  date: string
+  critical: number
+  high: number
+  medium: number
+  low: number
+}
+
+export interface GetVulnerabilityTrendResponse {
+  dashboardVulnerabilityTrend: VulnerabilityTrend[]
+}
