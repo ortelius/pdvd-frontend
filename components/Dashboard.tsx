@@ -165,74 +165,90 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Top Row: Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      
+      {/* Top Row: Split Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
-        {/* Severity Metrics (Critical, High, Medium, Low) */}
-        {(['critical', 'high', 'medium', 'low'] as const).map((severity) => {
-          const metric = metrics[severity]
-          const color = COLORS[severity]
-          
-          return (
-            <div key={severity} className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm relative overflow-hidden">
-              {/* Colored accent bar on left */}
-              <div className="absolute left-0 top-0 bottom-0 w-1" style={{ backgroundColor: color }}></div>
-              
-              <h3 className="text-gray-900 font-medium mb-2 capitalize">{severity}</h3>
-              <div className="flex items-end gap-3">
-                <span className="text-4xl font-bold text-gray-900">
-                  {loadingStatus ? (
-                    <span className="inline-block w-16 h-8 bg-gray-200 animate-pulse rounded"></span>
-                  ) : (
-                    metric.count
-                  )}
-                </span>
+        {/* Left Column: Severity Metrics Group (1 Row x 4 Cols) */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 h-full">
+          {(['critical', 'high', 'medium', 'low'] as const).map((severity) => {
+            const metric = metrics[severity]
+            const color = COLORS[severity]
+            
+            return (
+              <div key={severity} className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm relative overflow-hidden flex flex-col justify-between h-full">
+                {/* Colored accent bar on left */}
+                <div className="absolute left-0 top-0 bottom-0 w-1" style={{ backgroundColor: color }}></div>
                 
-                {!loadingStatus && (
-                  <div className={`flex items-center text-sm mb-1 font-medium ${
-                    metric.delta > 0 ? 'text-red-600' : metric.delta < 0 ? 'text-green-600' : 'text-gray-500'
-                  }`}>
-                    {metric.delta > 0 ? (
-                      <ArrowUpwardIcon fontSize="small" />
-                    ) : metric.delta < 0 ? (
-                      <ArrowDownwardIcon fontSize="small" />
+                {/* Header */}
+                <h3 className="text-gray-500 text-xs font-semibold uppercase tracking-wide mb-1 ml-1">{severity}</h3>
+                
+                {/* Content - Applied Color to Wrapper & Right Aligned */}
+                <div className="flex flex-col gap-1 items-end" style={{ color: color }}>
+                  {/* Count (text-4xl) */}
+                  <span className="text-4xl font-bold leading-none">
+                    {loadingStatus ? (
+                      <span className="inline-block w-12 h-8 bg-gray-200 animate-pulse rounded"></span>
                     ) : (
-                      <RemoveIcon fontSize="small" />
+                      metric.count
                     )}
-                    <span className="ml-0.5">{Math.abs(metric.delta)}</span>
-                  </div>
-                )}
+                  </span>
+                  
+                  {/* Delta (text-3xl) ~25% smaller than 4xl */}
+                  {!loadingStatus && (
+                    <div className="flex items-center text-3xl font-bold leading-none">
+                      {metric.delta > 0 ? (
+                        <ArrowUpwardIcon fontSize="inherit" />
+                      ) : metric.delta < 0 ? (
+                        <ArrowDownwardIcon fontSize="inherit" />
+                      ) : (
+                        <RemoveIcon fontSize="inherit" />
+                      )}
+                      <span className="ml-1">{Math.abs(metric.delta)}</span>
+                    </div>
+                  )}
+                </div>
               </div>
+            )
+          })}
+        </div>
+
+        {/* Right Column: Other Key Metrics (Side-by-Side) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
+          {/* Mean time to remediation */}
+          <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm h-full flex flex-col justify-between">
+            <div>
+              <h3 className="text-gray-900 font-medium mb-2">Mean time to remediation</h3>
+              <span className="text-4xl font-bold text-gray-900">12.5 days</span>
             </div>
-          )
-        })}
+            <div className="flex items-center gap-2 mt-4 text-gray-500">
+               <ScheduleIcon className="text-orange-400" />
+               <span className="text-sm">Target: 7 days</span>
+               <div className="h-8 w-24 ml-auto">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={lineData}>
+                      <Line type="monotone" dataKey="days" stroke="#f97316" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+               </div>
+            </div>
+          </div>
 
-        {/* Mean time to remediation */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-          <h3 className="text-gray-900 font-medium mb-2">Mean time to remediation</h3>
-          <span className="text-4xl font-bold text-gray-900">12.5 days</span>
-          <div className="flex items-center gap-2 mt-4 text-gray-500">
-             <ScheduleIcon className="text-orange-400" />
-             <span className="text-sm">Target: 7 days</span>
-             <div className="h-8 w-24 ml-auto">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={lineData}>
-                    <Line type="monotone" dataKey="days" stroke="#f97316" strokeWidth={2} dot={false} />
-                  </LineChart>
-                </ResponsiveContainer>
-             </div>
+          {/* % vulnerabilities remediated */}
+          <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm h-full flex flex-col justify-between">
+            <div>
+              <h3 className="text-gray-900 font-medium mb-2">% of vulnerabilities remediated</h3>
+              <span className="text-4xl font-bold text-gray-900">76%</span>
+            </div>
+            <div>
+              <div className="w-full bg-gray-200 rounded-full h-2.5 mt-6">
+                <div className="bg-green-600 h-2.5 rounded-full" style={{ width: '76%' }}></div>
+              </div>
+              <p className="text-xs text-gray-500 mt-2 text-right">Last 30 days</p>
+            </div>
           </div>
         </div>
 
-        {/* % vulnerabilities remediated */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-          <h3 className="text-gray-900 font-medium mb-2">% of vulnerabilities remediated</h3>
-          <span className="text-4xl font-bold text-gray-900">76%</span>
-          <div className="w-full bg-gray-200 rounded-full h-2.5 mt-6">
-            <div className="bg-green-600 h-2.5 rounded-full" style={{ width: '76%' }}></div>
-          </div>
-          <p className="text-xs text-gray-500 mt-2 text-right">Last 30 days</p>
-        </div>
       </div>
 
       {/* Middle Row: Charts */}
