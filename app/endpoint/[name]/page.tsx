@@ -7,7 +7,12 @@ import Sidebar from '@/components/Sidebar'
 import { getRelativeTime } from '@/lib/dataTransform'
 import { graphqlQuery, GET_ENDPOINT_DETAILS } from '@/lib/graphql'
 
+// --- Material UI Icon Imports ---
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
+import StarIcon from '@mui/icons-material/Star'
+import WhatshotIcon from '@mui/icons-material/Whatshot'
+import NotificationsIcon from '@mui/icons-material/Notifications'
+import WarningIcon from '@mui/icons-material/Warning'
 
 interface EndpointRelease {
   release_name: string
@@ -182,6 +187,13 @@ export default function EndpointDetailPage() {
     return a.package.localeCompare(b.package)
   })
 
+  // Safe total count calculation
+  const totalCount = 
+    endpoint.total_vulnerabilities.critical + 
+    endpoint.total_vulnerabilities.high + 
+    endpoint.total_vulnerabilities.medium + 
+    endpoint.total_vulnerabilities.low
+
   return (
     <>
       <Sidebar 
@@ -264,9 +276,7 @@ export default function EndpointDetailPage() {
             </div>
             <div>
               <p className="text-xs text-gray-600 flex justify-center items-center gap-1">Total CVEs</p>
-              <p className="font-medium text-lg text-gray-900">
-                {endpoint.total_vulnerabilities.critical + endpoint.total_vulnerabilities.high + endpoint.total_vulnerabilities.medium + endpoint.total_vulnerabilities.low}
-              </p>
+              <p className="font-medium text-lg text-gray-900">{totalCount}</p>
             </div>
           </div>
         </div>
@@ -276,7 +286,6 @@ export default function EndpointDetailPage() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-100 sticky top-0 z-10">
               <tr>
-                {/* UPDATED HEADER STYLES */}
                 <th className="px-4 py-2 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Release Name</th>
                 <th className="px-4 py-2 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Version</th>
                 <th className="px-4 py-2 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">OpenSSF Score</th>
@@ -304,7 +313,6 @@ export default function EndpointDetailPage() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-100 sticky top-0 z-10">
               <tr>
-                {/* UPDATED HEADER STYLES */}
                 <th className="px-4 py-2 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">CVE ID</th>
                 <th className="px-4 py-2 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Severity</th>
                 <th className="px-4 py-2 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Score</th>
@@ -319,7 +327,30 @@ export default function EndpointDetailPage() {
               {combinedData.map((row, index) => (
                 <tr key={index} className="border-b hover:bg-gray-50">
                   <td className="px-4 py-2 text-sm text-gray-700">{row.cve_id}</td>
-                  <td className="px-4 py-2 text-sm text-gray-700">{row.severity}</td>
+                  <td className="px-4 py-2 text-sm">
+                    {row.severity === 'clean' ? (
+                      <span className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800 flex items-center gap-1 w-fit">
+                        <StarIcon sx={{ width: 12, height: 12, color: 'rgb(22, 163, 74)' }} /> CLEAN
+                      </span>
+                    ) : (
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        row.severity === 'critical'
+                          ? 'bg-red-100 text-red-800'
+                          : row.severity === 'high'
+                          ? 'bg-orange-100 text-orange-800'
+                          : row.severity === 'medium'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-blue-100 text-blue-800'
+                      } flex items-center gap-1 w-fit`}>
+                        {row.severity === 'critical' ? (
+                            <span className="material-symbols-outlined" style={{ fontSize: '12px', color: 'rgb(185, 28, 28)' }}>bomb</span>
+                        ) : 
+                          row.severity === 'high' ? <WhatshotIcon sx={{ width: 12, height: 12, color: 'rgb(194, 65, 12)' }} /> : 
+                          row.severity === 'medium' ? <NotificationsIcon sx={{ width: 12, height: 12, color: 'rgb(202, 138, 4)' }} /> : 
+                          <WarningIcon sx={{ width: 12, height: 12, color: 'rgb(29, 78, 216)' }} />} {row.severity.toUpperCase()}
+                      </span>
+                    )}
+                  </td>
                   <td className="px-4 py-2 text-sm text-gray-700">{row.score}</td>
                   <td className="px-4 py-2 text-sm text-gray-700">{row.release_name}</td>
                   <td className="px-4 py-2 text-sm text-gray-700">{row.release_version}</td>

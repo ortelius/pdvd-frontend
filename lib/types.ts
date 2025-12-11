@@ -162,6 +162,12 @@ export interface AffectedEndpoint {
   environment: string
   last_sync: string
   status: string
+  total_vulnerabilities: {
+    critical: number
+    high: number
+    medium: number
+    low: number
+  }
 }
 
 export interface GetAffectedEndpointsResponse {
@@ -212,7 +218,7 @@ export interface ImageData {
   vulnerability_count_delta?: number
 }
 
-// Updated Types for Dashboard Trend
+// New Types for Dashboard Trend
 export interface VulnerabilityTrend {
   date: string
   critical: number

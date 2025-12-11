@@ -156,6 +156,46 @@ export default function EndpointsModal({ isOpen, onClose, releaseName, releaseVe
                         </div>
                       </div>
 
+                      {/* Vulnerabilities Row */}
+                      <div className="flex items-center gap-2 mb-3 mt-2">
+                         <span className="text-xs font-semibold text-gray-700">Vulns:</span>
+                         <div className="flex gap-1 flex-wrap">
+                            {endpoint.total_vulnerabilities?.critical > 0 && (
+                              <span className="flex items-center gap-1.5 px-2 py-0.5 bg-red-100 text-red-800 rounded text-xs font-bold">
+                                <span className="w-1.5 h-1.5 rounded-full bg-red-600"></span>
+                                {endpoint.total_vulnerabilities.critical} C
+                              </span>
+                            )}
+                            {endpoint.total_vulnerabilities?.high > 0 && (
+                              <span className="flex items-center gap-1.5 px-2 py-0.5 bg-orange-100 text-orange-800 rounded text-xs font-bold">
+                                <span className="w-1.5 h-1.5 rounded-full bg-orange-600"></span>
+                                {endpoint.total_vulnerabilities.high} H
+                              </span>
+                            )}
+                            {endpoint.total_vulnerabilities?.medium > 0 && (
+                              <span className="flex items-center gap-1.5 px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded text-xs font-bold">
+                                <span className="w-1.5 h-1.5 rounded-full bg-yellow-600"></span>
+                                {endpoint.total_vulnerabilities.medium} M
+                              </span>
+                            )}
+                            {endpoint.total_vulnerabilities?.low > 0 && (
+                              <span className="flex items-center gap-1.5 px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs font-bold">
+                                <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                                {endpoint.total_vulnerabilities.low} L
+                              </span>
+                            )}
+                            {(endpoint.total_vulnerabilities?.critical === 0 && 
+                              endpoint.total_vulnerabilities?.high === 0 && 
+                              endpoint.total_vulnerabilities?.medium === 0 && 
+                              endpoint.total_vulnerabilities?.low === 0) && (
+                              <span className="flex items-center gap-1.5 px-2 py-0.5 bg-green-100 text-green-800 rounded text-xs font-bold">
+                                <span className="w-1.5 h-1.5 rounded-full bg-green-600"></span>
+                                0
+                              </span>
+                            )}
+                         </div>
+                      </div>
+
                       {/* Footer Section: Status */}
                       <div className="flex items-center gap-4 text-xs text-gray-600 pt-2 border-t border-gray-100 mt-auto">
                         <div className="flex items-center gap-1">

@@ -10,12 +10,16 @@ import DashboardIcon from '@mui/icons-material/Dashboard'
 import HubIcon from '@mui/icons-material/Hub'
 import Inventory2Icon from '@mui/icons-material/Inventory2'
 import BuildIcon from '@mui/icons-material/Build'
-import SecurityIcon from '@mui/icons-material/Security'
 import SettingsIcon from '@mui/icons-material/Settings'
 import MenuIcon from '@mui/icons-material/Menu'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
+
+// Custom Icon Components using Material Symbols
+const VulnerabilitiesIcon = ({ className, style }: any) => (
+  <span className={`material-symbols-outlined ${className}`} style={style}>threat_intelligence</span>
+)
 
 interface SidebarProps {
   filters?: {
@@ -138,7 +142,7 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
         <NavItem label="Synced Endpoints" subLabel="(Where It's Running)" icon={HubIcon} path="/endpoints" />
         <NavItem label="Project Releases" subLabel="(Where to Fix It)" icon={Inventory2Icon} path="/releases" />
         <NavItem label="Mitigations" subLabel="(How to Fix It)" icon={BuildIcon} path="/mitigations" />
-        <NavItem label="Vulnerabilities" subLabel="(The Threat)" icon={SecurityIcon} path="/vulnerabilities" />
+        <NavItem label="Vulnerabilities" subLabel="(The Threat)" icon={VulnerabilitiesIcon} path="/vulnerabilities" />
       </nav>
 
       {/* Filters Section */}

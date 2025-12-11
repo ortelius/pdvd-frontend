@@ -226,6 +226,12 @@ export const GET_AFFECTED_ENDPOINTS = `
       environment
       last_sync
       status
+      total_vulnerabilities {
+        critical
+        high
+        medium
+        low
+      }
     }
   }
 `

@@ -24,7 +24,6 @@ import ConstructionIcon from '@mui/icons-material/Construction'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import WhatshotIcon from '@mui/icons-material/Whatshot'
 import NotificationsIcon from '@mui/icons-material/Notifications'
-import BugReportIcon from '@mui/icons-material/BugReport'
 
 export default function ReleaseVersionDetailPage() {
   const params = useParams()
@@ -275,7 +274,7 @@ export default function ReleaseVersionDetailPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 text-center bg-gray-50 p-4 rounded-lg border border-gray-200">
             <div>
               <p className="text-xs text-gray-600 flex justify-center items-center gap-1">
-                <BugReportIcon sx={{ width: 16, height: 16, color: 'rgb(185, 28, 28)' }} />
+                <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'rgb(185, 28, 28)' }}>threat_intelligence</span>
                 Vulnerabilities
               </p>
               <p className="font-medium text-lg text-gray-900">{vulnerabilities.length}</p>
@@ -394,7 +393,7 @@ export default function ReleaseVersionDetailPage() {
                               : 'bg-blue-100 text-blue-800'
                           } flex items-center gap-1 w-fit`}>
                             {row.severity === 'critical' ? (
-                                <BugReportIcon sx={{ width: 12, height: 12, color: 'rgb(185, 28, 28)' }} />
+                                <span className="material-symbols-outlined" style={{ fontSize: '12px', color: 'rgb(185, 28, 28)' }}>bomb</span>
                             ) : 
                              row.severity === 'high' ? <WhatshotIcon sx={{ width: 12, height: 12, color: 'rgb(194, 65, 12)' }} /> : 
                              row.severity === 'medium' ? <NotificationsIcon sx={{ width: 12, height: 12, color: 'rgb(202, 138, 4)' }} /> : 
