@@ -96,8 +96,6 @@ export interface Release {
   synced_endpoints?: AffectedEndpoint[]
 }
 
-// Additional types for other queries
-
 export interface AffectedRelease {
   cve_id: string
   summary?: string
@@ -218,7 +216,6 @@ export interface ImageData {
   vulnerability_count_delta?: number
 }
 
-// New Types for Dashboard Trend
 export interface VulnerabilityTrend {
   date: string
   critical: number
@@ -229,4 +226,56 @@ export interface VulnerabilityTrend {
 
 export interface GetVulnerabilityTrendResponse {
   dashboardVulnerabilityTrend: VulnerabilityTrend[]
+}
+
+// --- MTTR & Dashboard Metrics Types ---
+
+export interface ExecutiveSummary {
+  total_new_cves: number
+  total_fixed_cves: number
+  post_deployment_cves: number
+  mttr_all: number
+  mttr_post_deployment: number
+  mean_open_age_all: number
+  mean_open_age_post_deploy: number
+  open_cves_beyond_sla_pct: number
+  oldest_open_critical_days: number
+  backlog_delta: number
+}
+
+export interface DetailedSeverityMetrics {
+  severity: string
+  // Remediation Effectiveness (Closed)
+  mttr: number
+  mttr_post_deployment: number
+  fixed_within_sla_pct: number
+  // Active Risk (Open)
+  backlog_count: number
+  mean_open_age: number
+  mean_open_age_post_deploy: number
+  oldest_open_days: number
+  open_beyond_sla_pct: number
+  // Flow
+  new_detected: number
+  remediated: number
+}
+
+export interface EndpointImpactCount {
+  type: string
+  count: number
+}
+
+export interface EndpointImpactMetrics {
+  affected_endpoints_count: number
+  post_deployment_cves_by_type: EndpointImpactCount[]
+}
+
+export interface MTTRAnalysis {
+  executive_summary: ExecutiveSummary
+  by_severity: DetailedSeverityMetrics[]
+  endpoint_impact: EndpointImpactMetrics
+}
+
+export interface GetMTTRAnalysisResponse {
+  dashboardMTTR: MTTRAnalysis
 }

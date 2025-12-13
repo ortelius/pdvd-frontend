@@ -9,591 +9,463 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  LineChart,
-  Line,
   BarChart,
   Bar,
-  ReferenceLine
+  Legend,
+  Cell,
+  PieChart,
+  Pie
 } from 'recharts'
 
 import { 
   graphqlQuery, 
   GET_DASHBOARD_VULNERABILITY_TREND,
-  GET_DASHBOARD_GLOBAL_STATUS,
-  GET_MTTR_ANALYSIS,
-  GET_MTTR_TREND,
-  GET_MTTR_BY_ENDPOINT,
-  GET_MTTR_BY_PACKAGE,
-  GET_MTTR_BY_DISCLOSURE
+  GET_MTTR_ANALYSIS
 } from '@/lib/graphql'
-import { GetVulnerabilityTrendResponse, VulnerabilityTrend } from '@/lib/types'
+import { 
+  GetVulnerabilityTrendResponse, 
+  VulnerabilityTrend,
+  GetMTTRAnalysisResponse,
+  MTTRAnalysis 
+} from '@/lib/types'
 
-// --- Material UI Icons ---
+// --- Icons ---
 import ScheduleIcon from '@mui/icons-material/Schedule'
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward'
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward'
-import RemoveIcon from '@mui/icons-material/Remove'
+import WarningAmberIcon from '@mui/icons-material/WarningAmber'
+import BugReportIcon from '@mui/icons-material/BugReport'
 import TrendingUpIcon from '@mui/icons-material/TrendingUp'
-import BusinessIcon from '@mui/icons-material/Business'
-import Inventory2Icon from '@mui/icons-material/Inventory2'
-import CompareArrowsIcon from '@mui/icons-material/CompareArrows'
+import TrendingDownIcon from '@mui/icons-material/TrendingDown'
+import AccessTimeIcon from '@mui/icons-material/AccessTime'
+import RouterIcon from '@mui/icons-material/Router'
 
-// --- Types ---
-interface SeverityMetric {
-  count: number
-  delta: number
-}
-
-interface DashboardGlobalStatus {
-  critical: SeverityMetric
-  high: SeverityMetric
-  medium: SeverityMetric
-  low: SeverityMetric
-  total_count: number
-  total_delta: number
-}
-
-interface GetDashboardGlobalStatusResponse {
-  dashboardGlobalStatus: DashboardGlobalStatus
-}
-
-interface MTTRAnalysis {
-  by_severity: Array<{
-    severity: string
-    mean_days: number
-    median_days: number
-    min_days: number
-    max_days: number
-    sample_size: number
-  }>
-  overall_mean_days: number
-  analysis_period: number
-  total_remediated: number
-}
-
-interface MTTRTrend {
-  month: string
-  avg_mttr: number
-  count: number
-}
-
-interface MTTREndpoint {
-  endpoint_name: string
-  avg_mttr: number
-  count: number
-}
-
-interface MTTRPackage {
-  package: string
-  avg_mttr: number
-  count: number
-}
-
-interface MTTRDisclosure {
-  known_at_deployment: {
-    count: number
-    mean_mttr: number
-    median_mttr: number
-  }
-  disclosed_after_deployment: {
-    count: number
-    mean_mttr: number
-    median_mttr: number
-  }
-}
-
-// --- Color Palette ---
+// --- Constants ---
 const COLORS = {
-  low: 'rgb(79, 121, 255)',      // Blue
-  medium: 'rgb(255, 206, 84)',   // Yellow/Gold
-  high: 'rgb(255, 144, 79)',     // Orange
-  critical: 'rgb(185, 28, 28)'   // Red
+  CRITICAL: '#dc2626', // Red
+  HIGH: '#f97316',     // Orange
+  MEDIUM: '#eab308',   // Yellow
+  LOW: '#3b82f6',      // Blue
+  NONE: '#9ca3af'      // Gray
 }
 
-const SEVERITY_COLORS: Record<string, string> = {
-  CRITICAL: '#dc2626',
-  HIGH: '#f97316',
-  MEDIUM: '#eab308',
-  LOW: '#3b82f6'
-}
-
-// Mock Data for endpoint health
-const barData = [
-  { name: 'Jan 1', Healthy: 20, Risk: 5 },
-  { name: 'Jan 8', Healthy: 22, Risk: 8 },
-  { name: 'Jan 15', Healthy: 25, Risk: 6 },
-  { name: 'Jan 22', Healthy: 24, Risk: 9 },
-  { name: 'Jan 29', Healthy: 26, Risk: 7 },
-  { name: 'Feb 5', Healthy: 28, Risk: 10 },
-  { name: 'Feb 12', Healthy: 27, Risk: 8 },
-  { name: 'Feb 19', Healthy: 30, Risk: 11 },
-  { name: 'Feb 26', Healthy: 32, Risk: 9 },
-  { name: 'Mar 5', Healthy: 35, Risk: 12 },
-  { name: 'Mar 12', Healthy: 34, Risk: 10 },
-  { name: 'Mar 19', Healthy: 38, Risk: 13 },
-  { name: 'Mar 26', Healthy: 40, Risk: 11 },
-  { name: 'Apr 2', Healthy: 42, Risk: 14 },
-]
+const PIE_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
 
 export default function Dashboard() {
   const [trendData, setTrendData] = useState<VulnerabilityTrend[]>([])
   const [loadingTrend, setLoadingTrend] = useState(true)
-  const [trendError, setTrendError] = useState<string | null>(null)
+  
+  const [mttrData, setMttrData] = useState<MTTRAnalysis | null>(null)
+  const [loadingMttr, setLoadingMttr] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const [loadingStatus, setLoadingStatus] = useState(true)
-  const [metrics, setMetrics] = useState<DashboardGlobalStatus>({
-    critical: { count: 0, delta: 0 },
-    high: { count: 0, delta: 0 },
-    medium: { count: 0, delta: 0 },
-    low: { count: 0, delta: 0 },
-    total_count: 0,
-    total_delta: 0
-  })
-
-  // MTTR State
-  const [loadingMTTR, setLoadingMTTR] = useState(true)
-  const [mttrAnalysis, setMttrAnalysis] = useState<MTTRAnalysis | null>(null)
-  const [mttrTrend, setMttrTrend] = useState<MTTRTrend[]>([])
-  const [mttrByEndpoint, setMttrByEndpoint] = useState<MTTREndpoint[]>([])
-  const [mttrByPackage, setMttrByPackage] = useState<MTTRPackage[]>([])
-  const [mttrByDisclosure, setMttrByDisclosure] = useState<MTTRDisclosure | null>(null)
-
-  // 1. Fetch Vulnerability Trend Data
+  // 1. Fetch MTTR & Core Metrics
   useEffect(() => {
-    const fetchTrendData = async () => {
+    const fetchMetrics = async () => {
+      try {
+        setLoadingMttr(true)
+        const response = await graphqlQuery<GetMTTRAnalysisResponse>(
+          GET_MTTR_ANALYSIS, 
+          { days: 180 }
+        )
+        setMttrData(response.dashboardMTTR)
+      } catch (err) {
+        console.error('Error fetching dashboard metrics:', err)
+        setError('Failed to load dashboard metrics')
+      } finally {
+        setLoadingMttr(false)
+      }
+    }
+    fetchMetrics()
+  }, [])
+
+  // 2. Fetch Trend Data
+  useEffect(() => {
+    const fetchTrend = async () => {
       try {
         setLoadingTrend(true)
         const response = await graphqlQuery<GetVulnerabilityTrendResponse>(
           GET_DASHBOARD_VULNERABILITY_TREND,
-          { days: 90 }
+          { days: 180 }
         )
         setTrendData(response.dashboardVulnerabilityTrend)
       } catch (err) {
-        console.error('Error fetching dashboard trend:', err)
-        setTrendError('Failed to load trend data')
+        console.error('Error fetching trend:', err)
       } finally {
         setLoadingTrend(false)
       }
     }
-    fetchTrendData()
+    fetchTrend()
   }, [])
 
-  // 2. Fetch Endpoint Status Data
-  useEffect(() => {
-    const fetchStatusData = async () => {
-      try {
-        setLoadingStatus(true)
-        const response = await graphqlQuery<GetDashboardGlobalStatusResponse>(
-          GET_DASHBOARD_GLOBAL_STATUS,
-          { limit: 1000 }
-        )
-        if (response.dashboardGlobalStatus) {
-          setMetrics(response.dashboardGlobalStatus)
-        }
-      } catch (err) {
-        console.error('Error fetching dashboard status:', err)
-      } finally {
-        setLoadingStatus(false)
-      }
-    }
-    fetchStatusData()
-  }, [])
-
-  // 3. Fetch MTTR Data
-  useEffect(() => {
-    const fetchMTTRData = async () => {
-      try {
-        setLoadingMTTR(true)
-        const days = 90
-
-        const [analysisRes, trendRes, endpointRes, packageRes, disclosureRes] = await Promise.all([
-          graphqlQuery<{ dashboardMTTR: MTTRAnalysis }>(GET_MTTR_ANALYSIS, { days }),
-          graphqlQuery<{ dashboardMTTRTrend: MTTRTrend[] }>(GET_MTTR_TREND, { days: 180 }),
-          graphqlQuery<{ dashboardMTTRByEndpoint: MTTREndpoint[] }>(GET_MTTR_BY_ENDPOINT, { days, limit: 10 }),
-          graphqlQuery<{ dashboardMTTRByPackage: MTTRPackage[] }>(GET_MTTR_BY_PACKAGE, { days, limit: 10 }),
-          graphqlQuery<{ dashboardMTTRByDisclosureType: MTTRDisclosure }>(GET_MTTR_BY_DISCLOSURE, { days })
-        ])
-
-        setMttrAnalysis(analysisRes.dashboardMTTR)
-        setMttrTrend(trendRes.dashboardMTTRTrend)
-        setMttrByEndpoint(endpointRes.dashboardMTTRByEndpoint)
-        setMttrByPackage(packageRes.dashboardMTTRByPackage)
-        setMttrByDisclosure(disclosureRes.dashboardMTTRByDisclosureType)
-      } catch (err) {
-        console.error('Error fetching MTTR data:', err)
-      } finally {
-        setLoadingMTTR(false)
-      }
-    }
-    fetchMTTRData()
-  }, [])
-
-  // Format date for XAxis
+  // Helper for date formatting
   const formatDate = (dateStr: string) => {
     try {
-      const date = new Date(dateStr)
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-    } catch {
-      return dateStr
-    }
+      return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    } catch { return dateStr }
   }
 
+  // --- Components for Sections ---
+
+  const ExecutiveCard = ({ title, value, subValue, icon: Icon, colorClass, tooltip }: any) => (
+    <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full">
+      <div className="flex justify-between items-start mb-2">
+        <div className={`p-2 rounded-lg ${colorClass} bg-opacity-10`}>
+          <Icon className={colorClass} />
+        </div>
+      </div>
+      <h3 className="text-sm font-medium text-gray-500 mb-1">{title}</h3>
+      <div className="flex items-baseline gap-2 mb-3">
+        <span className="text-2xl font-bold text-gray-900">{value}</span>
+        {subValue && <span className="text-xs text-gray-500">{subValue}</span>}
+      </div>
+      {tooltip && (
+        <div className="mt-auto pt-3 border-t border-gray-100 text-xs text-gray-400 leading-relaxed">
+          {tooltip}
+        </div>
+      )}
+    </div>
+  )
+
+  if (loadingMttr) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p className="mt-4 text-gray-600 font-medium">Loading Dashboard Metrics...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !mttrData) {
+    return (
+      <div className="p-8 text-center">
+        <div className="bg-red-50 text-red-800 p-4 rounded-lg inline-block">
+          <h3 className="font-bold">Error Loading Dashboard</h3>
+          <p>{error || 'No data available'}</p>
+        </div>
+      </div>
+    )
+  }
+
+  const { executive_summary, by_severity, endpoint_impact } = mttrData
+
+  const volumeChartData = by_severity.map(s => ({
+    name: s.severity,
+    New: s.new_detected,
+    Fixed: s.remediated
+  }))
+
   return (
-    <div className="space-y-6">
-      
-      {/* Top Row: Split Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="flex h-full relative">
+      <div className="flex-1 p-6 bg-gray-50 min-h-screen space-y-8 font-sans overflow-y-auto">
         
-        {/* Left Column: Vulnerability Count Section */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Vulnerability Count</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {(['critical', 'high', 'medium', 'low'] as const).map((severity) => {
-              const metric = metrics[severity]
-              const color = COLORS[severity]
+        {/* Header */}
+        <div className="flex justify-between items-end">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Mission-Critical Vulnerability Dashboard</h1>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs font-semibold border border-blue-200">Rolling 180 Days</span>
+              <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded text-xs font-semibold border border-green-200">Endpoint Focused</span>
               
-              return (
-                <div key={severity} className="bg-gray-50 p-4 rounded-lg border border-gray-200 relative overflow-hidden h-full min-h-[100px]">
-                  {/* Colored accent bar on left */}
-                  <div className="absolute left-0 top-0 bottom-0 w-1" style={{ backgroundColor: color }}></div>
-                  
-                  {/* Header */}
-                  <h3 className="text-gray-500 text-xs font-semibold uppercase tracking-wide mb-2 ml-1">{severity}</h3>
-                  
-                  {/* Content - Applied Color to Wrapper & Right Aligned */}
-                  <div className="flex flex-col gap-1 items-end mt-auto" style={{ color: color }}>
-                    {/* Count */}
-                    <span className="text-2xl font-bold leading-none">
-                      {loadingStatus ? (
-                        <span className="inline-block w-12 h-6 bg-gray-200 animate-pulse rounded"></span>
-                      ) : (
-                        metric.count
-                      )}
-                    </span>
-                    
-                    {/* Delta */}
-                    <div className="flex items-center text-xl font-bold leading-none">
-                      {loadingStatus ? null : metric.delta > 0 ? (
-                        <ArrowUpwardIcon fontSize="inherit" />
-                      ) : metric.delta < 0 ? (
-                        <ArrowDownwardIcon fontSize="inherit" />
-                      ) : (
-                        <RemoveIcon fontSize="inherit" />
-                      )}
-                      <span className="ml-1">{loadingStatus ? '' : Math.abs(metric.delta)}</span>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Right Column: MTTR Section */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Mean Time to Remediation</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'] as const).map((severity) => {
-              const data = mttrAnalysis?.by_severity?.find((s) => s.severity === severity)
-              const color = SEVERITY_COLORS[severity]
-              
-              return (
-                <div key={severity} className="bg-gray-50 p-4 rounded-lg border border-gray-200 h-full min-h-[100px]">
-                  {/* Header */}
-                  <div className="flex items-center gap-2 mb-2">
-                    <ScheduleIcon sx={{ width: 16, height: 16, color }} />
-                    <h4 className="text-xs font-semibold text-gray-700">{severity}</h4>
+              {/* SLA Criteria Badge with Popover */}
+              <div className="relative group">
+                <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded text-xs font-semibold border border-purple-200 cursor-help flex items-center gap-1">
+                  <span>SLA Policy</span>
+                  <span className="w-1 h-1 rounded-full bg-purple-400"></span>
+                  <span className="font-normal opacity-80">Crit 15d • High 30d</span>
+                </span>
+                
+                {/* Popover */}
+                <div className="absolute left-0 top-full mt-2 w-72 bg-white border border-gray-200 shadow-xl rounded-lg p-4 z-50 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-200">
+                  <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
+                    <ScheduleIcon fontSize="small" className="text-purple-600" />
+                    <h4 className="font-bold text-gray-900 text-sm">SLA Remediation Targets</h4>
                   </div>
                   
-                  {/* Content */}
-                  {loadingMTTR ? (
-                    <div className="h-8 w-20 bg-gray-200 animate-pulse rounded"></div>
-                  ) : (
-                    <div className="flex flex-col gap-1">
-                      <p className="text-2xl font-bold leading-none" style={{ color }}>
-                        {data?.mean_days?.toFixed(1) || 'N/A'}
-                        {data?.mean_days && <span className="text-sm text-gray-500 ml-1">days</span>}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {data?.sample_size || 0} remediated
-                      </p>
+                  <div className="grid grid-cols-3 gap-y-2 text-xs">
+                    <div className="col-span-1 font-semibold text-gray-400 uppercase tracking-wider text-[10px]">Severity</div>
+                    <div className="col-span-1 text-right font-semibold text-gray-400 uppercase tracking-wider text-[10px]">Standard</div>
+                    <div className="col-span-1 text-right font-semibold text-gray-400 uppercase tracking-wider text-[10px]">High Risk</div>
+
+                    <div className="col-span-1 font-bold text-gray-800 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-red-600"></span> Critical
                     </div>
-                  )}
+                    <div className="col-span-1 text-right text-gray-600">15 days</div>
+                    <div className="col-span-1 text-right font-bold text-red-600">7 days</div>
+
+                    <div className="col-span-1 font-bold text-gray-800 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-orange-500"></span> High
+                    </div>
+                    <div className="col-span-1 text-right text-gray-600">30 days</div>
+                    <div className="col-span-1 text-right font-bold text-orange-600">15 days</div>
+
+                    <div className="col-span-1 font-medium text-gray-700 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-yellow-500"></span> Medium
+                    </div>
+                    <div className="col-span-1 text-right text-gray-600">90 days</div>
+                    <div className="col-span-1 text-right text-gray-600">90 days</div>
+
+                    <div className="col-span-1 font-medium text-gray-700 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-blue-500"></span> Low
+                    </div>
+                    <div className="col-span-1 text-right text-gray-600">180 days</div>
+                    <div className="col-span-1 text-right text-gray-600">180 days</div>
+                  </div>
+                  
+                  <div className="mt-3 pt-2 border-t border-gray-100 text-[10px] text-gray-400 italic">
+                    Clock starts at first detection on a deployed endpoint.
+                  </div>
                 </div>
-              )
-            })}
+              </div>
+            </div>
           </div>
         </div>
 
-      </div>
-
-      {/* Second Row: MTTR by Severity Cards - REMOVED */}
-
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* Post-Deployment Vulnerabilities over time */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-          <h3 className="text-gray-900 font-medium mb-6">Post-Deployment Vulnerabilities over time</h3>
-          <div className="h-64">
-            {loadingTrend ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              </div>
-            ) : trendError ? (
-              <div className="flex items-center justify-center h-full text-red-500 text-sm">
-                {trendError}
-              </div>
-            ) : trendData.length === 0 ? (
-              <div className="flex items-center justify-center h-full text-gray-400 text-sm">
-                No trend data available
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart
-                  data={trendData}
-                  margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-                >
-                  <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#f3f4f6" />
-                  <XAxis 
-                    dataKey="date" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{fill: '#6b7280', fontSize: 12}} 
-                    tickFormatter={formatDate}
-                    minTickGap={30}
-                  />
-                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#6b7280', fontSize: 12}} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                    labelFormatter={(label) => new Date(label).toLocaleDateString()}
-                  />
-                  <Area type="monotone" dataKey="low" stackId="1" stroke="none" fill={COLORS.low} fillOpacity={1} name="Low" />
-                  <Area type="monotone" dataKey="medium" stackId="1" stroke="none" fill={COLORS.medium} fillOpacity={1} name="Medium" />
-                  <Area type="monotone" dataKey="high" stackId="1" stroke="none" fill={COLORS.high} fillOpacity={1} name="High" />
-                  <Area type="monotone" dataKey="critical" stackId="1" stroke="none" fill={COLORS.critical} fillOpacity={1} name="Critical" />
-                </AreaChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-          <div className="flex flex-wrap justify-center gap-4 mt-4">
-             <div className="flex items-center gap-2 text-sm text-gray-600">
-               <span className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS.critical }}></span> Critical
-             </div>
-             <div className="flex items-center gap-2 text-sm text-gray-600">
-               <span className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS.high }}></span> High
-             </div>
-             <div className="flex items-center gap-2 text-sm text-gray-600">
-               <span className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS.medium }}></span> Medium
-             </div>
-             <div className="flex items-center gap-2 text-sm text-gray-600">
-               <span className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS.low }}></span> Low
-             </div>
-          </div>
+        {/* --- Section G: Executive Summary Block --- */}
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          <ExecutiveCard 
+            title="Total New CVEs" 
+            value={executive_summary.total_new_cves}
+            subValue="in period"
+            icon={BugReportIcon}
+            colorClass="text-red-600"
+            tooltip={
+              <span>
+                Total vulnerabilities detected within the rolling 180-day window.<br/>
+                <strong>Calculation:</strong> Σ CVEs where <em>Detected Date</em> is within last 180 days.
+              </span>
+            }
+          />
+          <ExecutiveCard 
+            title="Post-Deploy CVEs" 
+            value={executive_summary.post_deployment_cves}
+            subValue="active open"
+            icon={RouterIcon}
+            colorClass="text-orange-600"
+            tooltip={
+              <span>
+                Currently open vulnerabilities affecting deployed endpoints.<br/>
+                <strong>Calculation:</strong> Σ Open CVEs where <em>Disclosure Date</em> &gt; <em>Deployment Date</em>.
+              </span>
+            }
+          />
+          <ExecutiveCard 
+            title="MTTR (All)" 
+            value={`${executive_summary.mttr_all.toFixed(1)}d`}
+            subValue="avg remediation"
+            icon={ScheduleIcon}
+            colorClass="text-blue-600"
+            tooltip={
+              <span>
+                Mean Time To Remediate for all endpoint CVEs fixed in the last 180 days.<br/>
+                <strong>Calculation:</strong> Σ(<em>Fix Date</em> - <em>Detect Date</em>) / Total Fixed CVEs.
+              </span>
+            }
+          />
+          <ExecutiveCard 
+            title="MTTR (Post-Deploy)" 
+            value={`${executive_summary.mttr_post_deployment.toFixed(1)}d`}
+            subValue="mission critical"
+            icon={AccessTimeIcon}
+            colorClass="text-indigo-600"
+            tooltip={
+              <span>
+                Mean Time To Remediate for Post-Deployment CVEs only.<br/>
+                <strong>Calculation:</strong> Σ(<em>Fix Date</em> - <em>Detect Date</em>) / Total Fixed Post-Deploy CVEs.
+              </span>
+            }
+          />
+          <ExecutiveCard 
+            title="% Open &gt; SLA" 
+            value={`${executive_summary.open_cves_beyond_sla_pct.toFixed(1)}%`}
+            subValue="compliance risk"
+            icon={WarningAmberIcon}
+            colorClass="text-yellow-600"
+            tooltip={
+              <span>
+                Percentage of open CVEs exceeding their severity-based SLA.<br/>
+                <strong>Calculation:</strong> (Count of Open CVEs &gt; SLA Days / Total Open CVEs) * 100.
+              </span>
+            }
+          />
         </div>
 
-        {/* MTTR Trend Chart */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-          <h3 className="text-gray-900 font-medium mb-6 flex items-center gap-2">
-            <TrendingUpIcon sx={{ width: 20, height: 20, color: 'rgb(37, 99, 235)' }} />
-            MTTR Trend (Last 6 Months)
-          </h3>
-          <div className="h-64">
-            {loadingMTTR ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={mttrTrend}
-                  margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
-                >
-                  <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#f3f4f6" />
-                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#6b7280', fontSize: 12}} />
-                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#6b7280', fontSize: 12}} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e5e7eb' }}
-                    formatter={(value: any) => [`${value.toFixed(1)} days`, 'Avg MTTR']}
-                  />
-                  <Line type="monotone" dataKey="avg_mttr" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, fill: '#3b82f6' }} />
-                </LineChart>
-              </ResponsiveContainer>
-            )}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* --- Section A & B & C: Detailed Metrics Table --- */}
+          <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
+            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+              <h2 className="text-lg font-bold text-gray-900">Severity Breakdown & SLA Compliance</h2>
+              <span className="text-xs text-gray-500">NIST SP 800-218 PP-6</span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-white text-gray-500 font-medium border-b border-gray-200">
+                  <tr>
+                    <th className="px-6 py-3">Severity</th>
+                    <th className="px-6 py-3 text-center" title="Mean Time To Remediate (180d)">MTTR (Days)</th>
+                    <th className="px-6 py-3 text-center" title="MTTR for Post-Deployment Issues">MTTR (Post)</th>
+                    <th className="px-6 py-3 text-center" title="% Fixed Within SLA">% Fixed in SLA</th>
+                    <th className="px-6 py-3 text-center" title="Mean Open Age">Mean Age</th>
+                    <th className="px-6 py-3 text-center" title="Oldest Open Vulnerability">Oldest</th>
+                    <th className="px-6 py-3 text-center text-red-600" title="% Open Vulnerabilities Beyond SLA">% &gt; SLA</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {by_severity.map((row) => (
+                    <tr key={row.severity} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 font-semibold flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[row.severity as keyof typeof COLORS] || COLORS.NONE }}></span>
+                        {row.severity}
+                      </td>
+                      <td className="px-6 py-4 text-center">{row.mttr.toFixed(1)}</td>
+                      <td className="px-6 py-4 text-center font-medium text-gray-900">{row.mttr_post_deployment.toFixed(1)}</td>
+                      <td className="px-6 py-4 text-center">
+                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${row.fixed_within_sla_pct >= 80 ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                          {row.fixed_within_sla_pct.toFixed(0)}%
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-center">{row.mean_open_age.toFixed(1)}d</td>
+                      <td className="px-6 py-4 text-center text-gray-500">{row.oldest_open_days.toFixed(0)}d</td>
+                      <td className="px-6 py-4 text-center font-bold text-red-600">
+                        {row.open_beyond_sla_pct.toFixed(1)}%
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
 
-      </div>
+          {/* --- Section D: Volume & Flow (Backlog Delta) --- */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex flex-col">
+            <div className="flex justify-between items-start mb-4">
+              <h2 className="text-lg font-bold text-gray-900">Volume & Flow</h2>
+              <span className="text-xs text-gray-400">NIST SP 800-53 SI-2</span>
+            </div>
+            
+            <div className="flex items-center justify-between mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
+              <div>
+                <p className="text-sm text-blue-800 font-bold">Backlog Delta</p>
+                <p className="text-xs text-blue-600">New - Fixed</p>
+              </div>
+              <div className={`text-3xl font-bold ${executive_summary.backlog_delta > 0 ? 'text-red-600' : 'text-green-600'} flex items-center`}>
+                {executive_summary.backlog_delta > 0 ? <TrendingUpIcon className="mr-1"/> : <TrendingDownIcon className="mr-1"/>}
+                {Math.abs(executive_summary.backlog_delta)}
+              </div>
+            </div>
 
-      {/* MTTR Performance Analysis Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* Top 10 Fastest Endpoints */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-          <h3 className="text-gray-900 font-medium mb-6 flex items-center gap-2">
-            <BusinessIcon sx={{ width: 20, height: 20, color: 'rgb(34, 197, 94)' }} />
-            Top 10 Fastest Endpoints
-          </h3>
-          <div className="h-80">
-            {loadingMTTR ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              </div>
-            ) : mttrByEndpoint.length === 0 ? (
-              <div className="flex items-center justify-center h-full text-gray-400 text-sm">
-                No endpoint data available
-              </div>
-            ) : (
+            <div className="flex-1 min-h-[200px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={mttrByEndpoint}
-                  layout="vertical"
-                  margin={{ top: 5, right: 30, left: 120, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                  <XAxis type="number" axisLine={false} tickLine={false} tick={{fill: '#6b7280', fontSize: 11}} />
-                  <YAxis 
-                    type="category" 
-                    dataKey="endpoint_name" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{fill: '#6b7280', fontSize: 11}}
-                    width={110}
-                  />
+                <BarChart data={volumeChartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} />
                   <Tooltip 
-                    contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e5e7eb' }}
-                    formatter={(value: any) => [`${value.toFixed(1)} days`, 'Avg MTTR']}
+                    cursor={{ fill: '#f9fafb' }}
+                    contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb' }}
                   />
-                  <Bar dataKey="avg_mttr" fill="#22c55e" radius={[0, 4, 4, 0]} />
+                  <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }}/>
+                  <Bar dataKey="New" fill="#ef4444" radius={[4, 4, 0, 0]} barSize={20} />
+                  <Bar dataKey="Fixed" fill="#10b981" radius={[4, 4, 0, 0]} barSize={20} />
                 </BarChart>
               </ResponsiveContainer>
-            )}
+            </div>
           </div>
         </div>
 
-        {/* Top 10 Slowest Packages */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-          <h3 className="text-gray-900 font-medium mb-6 flex items-center gap-2">
-            <Inventory2Icon sx={{ width: 20, height: 20, color: 'rgb(239, 68, 68)' }} />
-            Top 10 Slowest Packages
-          </h3>
-          <div className="h-80">
-            {loadingMTTR ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              </div>
-            ) : mttrByPackage.length === 0 ? (
-              <div className="flex items-center justify-center h-full text-gray-400 text-sm">
-                No package data available
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={mttrByPackage}
-                  layout="vertical"
-                  margin={{ top: 5, right: 30, left: 120, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                  <XAxis type="number" axisLine={false} tickLine={false} tick={{fill: '#6b7280', fontSize: 11}} />
-                  <YAxis 
-                    type="category" 
-                    dataKey="package" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{fill: '#6b7280', fontSize: 11}}
-                    width={110}
-                  />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e5e7eb' }}
-                    formatter={(value: any) => [`${value.toFixed(1)} days`, 'Avg MTTR']}
-                  />
-                  <Bar dataKey="avg_mttr" fill="#ef4444" radius={[0, 4, 4, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* --- Section F: Trend Chart --- */}
+          <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-lg font-bold text-gray-900">Vulnerability Trend (180 Days)</h2>
+              <span className="text-xs text-gray-400">NIST SP 800-137 Continuous Monitoring</span>
+            </div>
+            <div className="h-72">
+              {loadingTrend ? (
+                <div className="flex items-center justify-center h-full text-gray-400">Loading trend...</div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorCritical" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={COLORS.CRITICAL} stopOpacity={0.1}/>
+                        <stop offset="95%" stopColor={COLORS.CRITICAL} stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                    <XAxis 
+                      dataKey="date" 
+                      tickFormatter={formatDate} 
+                      tick={{ fontSize: 12, fill: '#6b7280' }} 
+                      axisLine={false} 
+                      tickLine={false} 
+                      minTickGap={30}
+                    />
+                    <YAxis tick={{ fontSize: 12, fill: '#6b7280' }} axisLine={false} tickLine={false} />
+                    <Tooltip 
+                      contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                      labelFormatter={(l) => new Date(l).toLocaleDateString()}
+                    />
+                    <Area type="monotone" dataKey="low" stackId="1" stroke={COLORS.LOW} fill={COLORS.LOW} fillOpacity={0.6} />
+                    <Area type="monotone" dataKey="medium" stackId="1" stroke={COLORS.MEDIUM} fill={COLORS.MEDIUM} fillOpacity={0.6} />
+                    <Area type="monotone" dataKey="high" stackId="1" stroke={COLORS.HIGH} fill={COLORS.HIGH} fillOpacity={0.6} />
+                    <Area type="monotone" dataKey="critical" stackId="1" stroke={COLORS.CRITICAL} fill="url(#colorCritical)" fillOpacity={0.8} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
+            </div>
           </div>
-        </div>
 
+          {/* --- Section E: Endpoint Impact --- */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex flex-col">
+            <div className="mb-4">
+              <h2 className="text-lg font-bold text-gray-900">Endpoint Impact</h2>
+              <p className="text-xs text-gray-500 mt-1">Post-deployment CVE distribution by endpoint type</p>
+            </div>
+
+            <div className="flex-1 flex flex-col justify-center items-center">
+              <div className="relative w-full h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={endpoint_impact.post_deployment_cves_by_type as any}
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="count"
+                      nameKey="type"
+                    >
+                      {endpoint_impact.post_deployment_cves_by_type.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb' }}/>
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span className="text-2xl font-bold text-gray-900">{endpoint_impact.affected_endpoints_count}</span>
+                  <span className="text-xs text-gray-500 uppercase tracking-wide">Affected</span>
+                </div>
+              </div>
+              
+              <div className="w-full mt-4 space-y-2">
+                {endpoint_impact.post_deployment_cves_by_type.map((item, index) => (
+                  <div key={item.type} className="flex justify-between items-center text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full" style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}></span>
+                      <span className="capitalize text-gray-700">{item.type.replace('_', ' ')}</span>
+                    </div>
+                    <span className="font-semibold text-gray-900">{item.count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+        </div>
       </div>
-
-      {/* Health & Disclosure Analysis Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* Endpoint Remediation Health */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-          <h3 className="text-gray-900 font-medium mb-6">Endpoint Remediation Health</h3>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={barData}
-                barSize={16}
-                margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
-              >
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#6b7280', fontSize: 12}} interval={1} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#6b7280', fontSize: 12}} />
-                <Tooltip cursor={{ fill: '#f9fafb' }} contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e5e7eb' }} />
-                <Bar dataKey="Risk" stackId="a" fill="#f87171" name="At Risk" radius={[0, 0, 4, 4]} />
-                <Bar dataKey="Healthy" stackId="a" fill="#4ade80" name="Healthy" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="flex justify-center gap-6 mt-4">
-            <div className="flex items-center gap-2 text-sm text-gray-600"><span className="w-3 h-3 rounded-full bg-green-400"></span> Healthy Endpoints</div>
-            <div className="flex items-center gap-2 text-sm text-gray-600"><span className="w-3 h-3 rounded-full bg-red-400"></span> Endpoints with Critical Issues</div>
-          </div>
-        </div>
-
-        {/* Disclosure Timing Comparison */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-          <h3 className="text-gray-900 font-medium mb-6 flex items-center gap-2">
-            <CompareArrowsIcon sx={{ width: 20, height: 20, color: 'rgb(147, 51, 234)' }} />
-            Disclosure Timing Comparison
-          </h3>
-          <div className="h-64">
-            {loadingMTTR ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              </div>
-            ) : !mttrByDisclosure ? (
-              <div className="flex items-center justify-center h-full text-gray-400 text-sm">
-                No disclosure data available
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={[
-                    {
-                      disclosure_type: 'Known at Deployment',
-                      avg_mttr: mttrByDisclosure.known_at_deployment.mean_mttr
-                    },
-                    {
-                      disclosure_type: 'Disclosed After',
-                      avg_mttr: mttrByDisclosure.disclosed_after_deployment.mean_mttr
-                    }
-                  ]}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                  <XAxis 
-                    dataKey="disclosure_type" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{fill: '#6b7280', fontSize: 12}}
-                  />
-                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#6b7280', fontSize: 12}} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e5e7eb' }}
-                    formatter={(value: any) => [`${value.toFixed(1)} days`, 'Avg MTTR']}
-                  />
-                  <Bar dataKey="avg_mttr" fill="#9333ea" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-        </div>
-
-      </div>
-
     </div>
   )
 }
