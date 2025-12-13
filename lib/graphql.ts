@@ -324,3 +324,87 @@ export const GET_DASHBOARD_VULNERABILITY_TREND = `
     }
   }
 `
+
+// Dashboard Global Status Query
+export const GET_DASHBOARD_GLOBAL_STATUS = `
+  query DashboardGlobalStatus($limit: Int) {
+    dashboardGlobalStatus(limit: $limit) {
+      critical { count delta }
+      high { count delta }
+      medium { count delta }
+      low { count delta }
+      total_count
+      total_delta
+    }
+  }
+`
+
+// MTTR Analysis Query
+export const GET_MTTR_ANALYSIS = `
+  query MTTRAnalysis($days: Int!) {
+    dashboardMTTR(days: $days) {
+      by_severity {
+        severity
+        mean_days
+        median_days
+        min_days
+        max_days
+        sample_size
+      }
+      overall_mean_days
+      analysis_period
+      total_remediated
+    }
+  }
+`
+
+// MTTR Trend Query
+export const GET_MTTR_TREND = `
+  query MTTRTrend($days: Int!) {
+    dashboardMTTRTrend(days: $days) {
+      month
+      avg_mttr
+      count
+    }
+  }
+`
+
+// MTTR By Endpoint Query
+export const GET_MTTR_BY_ENDPOINT = `
+  query MTTRByEndpoint($days: Int!, $limit: Int) {
+    dashboardMTTRByEndpoint(days: $days, limit: $limit) {
+      endpoint_name
+      avg_mttr
+      count
+    }
+  }
+`
+
+// MTTR By Package Query
+export const GET_MTTR_BY_PACKAGE = `
+  query MTTRByPackage($days: Int!, $limit: Int) {
+    dashboardMTTRByPackage(days: $days, limit: $limit) {
+      package
+      avg_mttr
+      count
+    }
+  }
+`
+
+// MTTR By Disclosure Query
+export const GET_MTTR_BY_DISCLOSURE = `
+  query MTTRByDisclosure($days: Int!) {
+    dashboardMTTRByDisclosureType(days: $days) {
+      known_at_deployment {
+        count
+        mean_mttr
+        median_mttr
+      }
+      disclosed_after_deployment {
+        count
+        mean_mttr
+        median_mttr
+      }
+    }
+  }
+`
