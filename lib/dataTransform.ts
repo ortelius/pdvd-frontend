@@ -92,19 +92,19 @@ export function transformAffectedReleasesToImageData (
     // Get vulnerability count delta (can be positive, negative, zero, or null)
     const vulnerabilityCountDelta = firstRelease.vulnerability_count_delta !== undefined
       ? firstRelease.vulnerability_count_delta
-      : null
+      : 0
 
     imageDataList.push({
       name: firstRelease.release_name,
       version: firstRelease.release_version,
       releaseDate: firstRelease.published ?? new Date().toISOString(),
       publisher: firstRelease.project_type === 'docker' ? 'Docker Official Image' : 'Community',
-      description: `${String(firstRelease.project_type)} release with ${String(firstRelease.dependency_count)} dependencies`,
+      description: `${firstRelease.project_type ?? 'Unknown'} release with ${String(firstRelease.dependency_count)} dependencies`,
       pulls: firstRelease.dependency_count > 100 ? '1B+' : firstRelease.dependency_count > 50 ? '500M+' : '100M+',
       updated: getRelativeTime(mostRecentDate.toISOString()),
       verified: false,
       official: false,
-      tags: ['latest', firstRelease.release_version, firstRelease.project_type],
+      tags: ['latest', firstRelease.release_version, firstRelease.project_type ?? 'unknown'],
       longDescription: `${String(firstRelease.release_name)} version ${String(firstRelease.release_version)}`,
       vulnerabilities: vulnCounts,
       dependency_count: firstRelease.dependency_count,
@@ -113,7 +113,7 @@ export function transformAffectedReleasesToImageData (
       syncedEndpoints: firstRelease.synced_endpoint_count ?? 0,
       version_count: firstRelease.version_count ?? 1,
       total_vulnerabilities: totalVulnerabilities,
-      vulnerability_count_delta: vulnerabilityCountDelta ?? 0
+      vulnerability_count_delta: vulnerabilityCountDelta
     })
   })
 
