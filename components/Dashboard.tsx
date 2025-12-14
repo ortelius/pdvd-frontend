@@ -37,6 +37,8 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 import TrendingDownIcon from '@mui/icons-material/TrendingDown'
 import AccessTimeIcon from '@mui/icons-material/AccessTime'
 import RouterIcon from '@mui/icons-material/Router'
+import TimerIcon from '@mui/icons-material/Timer'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 
 // --- Constants ---
 const COLORS = {
@@ -77,7 +79,7 @@ export default function Dashboard() {
     fetchMetrics()
   }, [])
 
-  // 2. Fetch Trend Data
+  // 2. Fetch Trend Data (Trimmed to start at first activity)
   useEffect(() => {
     const fetchTrend = async () => {
       try {
@@ -86,7 +88,23 @@ export default function Dashboard() {
           GET_DASHBOARD_VULNERABILITY_TREND,
           { days: 180 }
         )
-        setTrendData(response.dashboardVulnerabilityTrend)
+        
+        const rawData = response.dashboardVulnerabilityTrend
+        
+        // Find the first index where there is any vulnerability data
+        const firstActiveIndex = rawData.findIndex(d => 
+          (d.critical + d.high + d.medium + d.low) > 0
+        )
+
+        // If we found active data and it's not at the very start
+        if (firstActiveIndex > 0) {
+          // We keep one data point before the first active one (if available)
+          const startIndex = Math.max(0, firstActiveIndex - 1)
+          setTrendData(rawData.slice(startIndex))
+        } else {
+          setTrendData(rawData)
+        }
+
       } catch (err) {
         console.error('Error fetching trend:', err)
       } finally {
@@ -410,14 +428,14 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
           {/* --- Section F: Trend Chart --- */}
-          <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+          <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex flex-col">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-lg font-bold text-gray-900">Vulnerability Trend (180 Days)</h2>
               <span className="text-xs text-gray-400">
                 <a href="#nist-800-218-rv1" className="text-blue-600 underline hover:text-blue-800">NIST 800-218 RV.1</a> • <a href="#nist-800-137" className="text-blue-600 underline hover:text-blue-800">NIST 800-137</a>
               </span>
             </div>
-            <div className="h-72">
+            <div className="flex-1 min-h-[400px]">
               {loadingTrend ? (
                 <div className="flex items-center justify-center h-full text-gray-400">Loading trend...</div>
               ) : (
@@ -453,48 +471,162 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* --- Section E: Endpoint Impact --- */}
+          {/* --- Section E: Security Velocity & Impact Metrics --- */}
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex flex-col">
-            <div className="mb-4">
-              <h2 className="text-lg font-bold text-gray-900">Endpoint Impact</h2>
-              <p className="text-xs text-gray-500 mt-1">Post-deployment CVE distribution by endpoint type</p>
+            <div className="mb-4 flex justify-between items-start">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Security Velocity & Impact Metrics</h2>
+                <p className="text-xs text-gray-500 mt-1">Remediation effectiveness and exposure trends</p>
+              </div>
+              <a href="#nist-800-218-rv2" className="text-xs text-blue-600 underline hover:text-blue-800">NIST 800-218 RV.2</a>
             </div>
 
-            <div className="flex-1 flex flex-col justify-center items-center">
-              <div className="relative w-full h-48">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={endpoint_impact.post_deployment_cves_by_type as any}
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={5}
-                      dataKey="count"
-                      nameKey="type"
-                    >
-                      {endpoint_impact.post_deployment_cves_by_type.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb' }}/>
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <span className="text-2xl font-bold text-gray-900">{endpoint_impact.affected_endpoints_count}</span>
-                  <span className="text-xs text-gray-500 uppercase tracking-wide">Affected</span>
-                </div>
-              </div>
+            <div className="grid grid-cols-2 gap-4 flex-1">
               
-              <div className="w-full mt-4 space-y-2">
-                {endpoint_impact.post_deployment_cves_by_type.map((item, index) => (
-                  <div key={item.type} className="flex justify-between items-center text-sm">
-                    <div className="flex items-center gap-2">
-                      <span className="w-3 h-3 rounded-full" style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}></span>
-                      <span className="capitalize text-gray-700">{item.type.replace('_', ' ')}</span>
+              {/* Top Left: Remediation Velocity */}
+              <ExecutiveCard
+                title="Fix Velocity"
+                value={(by_severity.reduce((acc, s) => acc + (s.remediated || 0), 0) / 26).toFixed(1)}
+                subValue="CVEs Fixed/Week"
+                icon={TrendingUpIcon}
+                colorClass="text-emerald-600"
+                tooltip={
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center">
+                      <span>Last 180 days:</span>
+                      <span className="font-medium text-gray-900 ml-2">
+                        {by_severity.reduce((acc, s) => acc + (s.remediated || 0), 0)} total
+                      </span>
                     </div>
-                    <span className="font-semibold text-gray-900">{item.count}</span>
+                    <div className="text-[10px] text-gray-400">
+                      <strong>Calculation:</strong> Σ Remediated / 26 weeks
+                    </div>
                   </div>
-                ))}
+                }
+              />
+
+              {/* Top Right: Critical/High Backlog */}
+              <ExecutiveCard
+                title="High-Risk Backlog"
+                value={by_severity.filter(s => s.severity === 'Critical' || s.severity === 'High')
+                       .reduce((acc, s) => acc + (s.open_count || 0), 0)}
+                subValue="Critical + High Open"
+                icon={WarningAmberIcon}
+                colorClass="text-rose-600"
+                tooltip={
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center">
+                      <span>Past SLA:</span>
+                      <span className="font-medium text-rose-600 ml-2">
+                        {by_severity.filter(s => s.severity === 'Critical' || s.severity === 'High')
+                         .reduce((acc, s) => acc + (s.open_beyond_sla_count || 0), 0)} CVEs
+                      </span>
+                    </div>
+                    <div className="text-[10px] text-gray-400">
+                      <strong>Calculation:</strong> Σ Open (Critical + High)
+                    </div>
+                  </div>
+                }
+              />
+
+              {/* Bottom Left: Pre-Deploy Detection Rate */}
+              <ExecutiveCard
+                title="Shift-Left Success"
+                value={executive_summary.total_new_cves > 0 
+                       ? ((1 - (executive_summary.post_deployment_cves / executive_summary.total_new_cves)) * 100).toFixed(1) + '%'
+                       : '0.0%'}
+                subValue="Caught Pre-Deploy"
+                icon={CheckCircleIcon}
+                colorClass="text-indigo-600"
+                tooltip={
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center">
+                      <span>Pre-Deploy:</span>
+                      <span className="font-medium text-gray-900 ml-2">
+                        {executive_summary.total_new_cves - executive_summary.post_deployment_cves} CVEs
+                      </span>
+                    </div>
+                    <div className="text-[10px] text-gray-400">
+                      <strong>Calculation:</strong> (1 - Post-Deploy / Total) × 100
+                    </div>
+                  </div>
+                }
+              />
+
+              {/* Bottom Right: SLA Burn Rate */}
+              <ExecutiveCard
+                title="SLA Burn Rate"
+                value={(() => {
+                  // Calculate how many CVEs will breach SLA in next 30 days
+                  const criticalSLA = 7;
+                  const highSLA = 30;
+                  const mediumSLA = 90;
+                  const lowSLA = 180;
+                  
+                  let approaching = 0;
+                  by_severity.forEach(s => {
+                    const sla = s.severity === 'Critical' ? criticalSLA : 
+                                s.severity === 'High' ? highSLA :
+                                s.severity === 'Medium' ? mediumSLA : lowSLA;
+                    const meanAge = s.mean_open_age || 0;
+                    const openCount = s.open_count || 0;
+                    // Count CVEs that are within 30 days of SLA breach
+                    if (meanAge >= sla - 30 && meanAge < sla) {
+                      approaching += openCount;
+                    }
+                  });
+                  return approaching;
+                })()}
+                subValue="Breach in 30d"
+                icon={TimerIcon}
+                colorClass="text-amber-600"
+                tooltip={
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center">
+                      <span>Already Past:</span>
+                      <span className="font-medium text-amber-600 ml-2">
+                        {by_severity.reduce((acc, s) => acc + (s.open_beyond_sla_count || 0), 0)} CVEs
+                      </span>
+                    </div>
+                    <div className="text-[10px] text-gray-400">
+                      <strong>Calculation:</strong> Σ Open where (SLA - Age) ≤ 30d
+                    </div>
+                  </div>
+                }
+              />
+            </div>
+
+            {/* Bottom Summary Bar - Exposure & Debt */}
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <div className="grid grid-cols-3 gap-6 text-center">
+                <div className="flex flex-col">
+                  <div className="text-2xl font-bold text-gray-900 mb-1">
+                    {(by_severity.reduce((acc, s) => acc + (s.open_count || 0) * (s.mean_open_age || 0), 0) / 1000).toFixed(1)}k
+                  </div>
+                  <div className="text-xs font-medium uppercase text-gray-500 tracking-wide">CVE-Days Exposure</div>
+                  <div className="text-xs text-gray-400 mt-1">Σ(Open × Mean Age)</div>
+                </div>
+                <div className="flex flex-col">
+                  <div className="text-2xl font-bold text-gray-900 mb-1">
+                    {(() => {
+                      const weeklyVelocity = by_severity.reduce((acc, s) => acc + (s.remediated || 0), 0) / 26;
+                      const totalOpen = by_severity.reduce((acc, s) => acc + (s.open_count || 0), 0);
+                      return weeklyVelocity > 0 ? (totalOpen / weeklyVelocity).toFixed(1) : '∞';
+                    })()}
+                  </div>
+                  <div className="text-xs font-medium uppercase text-gray-500 tracking-wide">Weeks to Clear</div>
+                  <div className="text-xs text-gray-400 mt-1">Open / Weekly Velocity</div>
+                </div>
+                <div className="flex flex-col">
+                  <div className="text-2xl font-bold text-gray-900 mb-1">
+                    {by_severity.reduce((acc, s) => {
+                      const criticalWeight = s.severity === 'Critical' ? 4 : s.severity === 'High' ? 3 : s.severity === 'Medium' ? 2 : 1;
+                      return acc + (s.open_count || 0) * criticalWeight;
+                    }, 0)}
+                  </div>
+                  <div className="text-xs font-medium uppercase text-gray-500 tracking-wide">Risk Score</div>
+                  <div className="text-xs text-gray-400 mt-1">Weighted Open (C:4 H:3 M:2 L:1)</div>
+                </div>
               </div>
             </div>
           </div>
