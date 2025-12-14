@@ -63,6 +63,46 @@ export const GET_RELEASE = `
       project_type
       content_sha
       dependency_count
+      
+      # Source Control Details
+      git_commit
+      git_branch
+      git_tag
+      git_repo
+      git_org
+      git_url
+      git_repo_project
+      git_verify_commit
+      git_signed_off_by
+      
+      # Git Metrics
+      git_commit_timestamp
+      git_commit_authors
+      git_committerscnt
+      git_total_committerscnt
+      git_contrib_percentage
+      git_lines_added
+      git_lines_deleted
+      git_lines_total
+      git_prev_comp_commit
+      
+      # Container Artifacts
+      docker_repo
+      docker_tag
+      docker_sha
+      basename
+      
+      # Build Environment
+      build_date
+      build_id
+      build_num
+      build_url
+      
+      # SBOM Content
+      sbom {
+        content
+      }
+
       vulnerabilities {
         cve_id
         summary
@@ -71,8 +111,22 @@ export const GET_RELEASE = `
         package
         affected_version
         fixed_in
+        full_purl
       }
+      
       openssf_scorecard_score
+      scorecard_result {
+        Score
+        Scorecard {
+          Version
+        }
+        Checks {
+          Name
+          Score
+          Reason
+        }
+      }
+      
       synced_endpoint_count
       synced_endpoints {
         endpoint_name
@@ -179,6 +233,7 @@ export const GET_VULNERABILITIES = `
       fixed_in
       affected_releases
       affected_endpoints
+      full_purl
     }
   }
 `
@@ -215,6 +270,7 @@ export const GET_ENDPOINT_DETAILS = `
           package
           affected_version
           fixed_in
+          full_purl
         }
       }
     }
@@ -260,6 +316,7 @@ export const GET_MTTR_ANALYSIS = `
         open_cves_beyond_sla_pct
         oldest_open_critical_days
         backlog_delta
+        fixed_within_sla_pct
       }
       by_severity {
         severity
@@ -271,8 +328,10 @@ export const GET_MTTR_ANALYSIS = `
         mean_open_age_post_deploy
         oldest_open_days
         open_beyond_sla_pct
+        open_beyond_sla_count
         new_detected
         remediated
+        open_count
       }
       endpoint_impact {
         affected_endpoints_count
