@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSidebar } from '@/context/SidebarContext'
+import AuthProfile from './AuthProfile' 
 
 // Icons
 import DashboardIcon from '@mui/icons-material/Dashboard'
@@ -124,8 +125,8 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
       {/* Header */}
       <div className={`h-16 flex items-center px-4 border-b border-gray-100 ${!isExpanded ? 'justify-center' : 'justify-between'}`}>
         <div className={`flex items-center gap-3 overflow-hidden transition-all duration-300 ${!isExpanded ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>
-           <img src="/logo.jpg" alt="Logo" className="h-10 w-10 flex-shrink-0 object-contain" />
-           <span className="font-bold text-lg text-gray-800 tracking-tight">Ortelius</span>
+           <img src="/logo.svg" alt="Logo" className="h-10 w-10 flex-shrink-0 object-contain" />
+           <span className="font-bold text-lg text-gray-800 tracking-tight">Powered by DeployHub</span>
         </div>
 
         <button 
@@ -326,13 +327,9 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
         </div>
       )}
 
-      {/* Auth Buttons */}
-      {isExpanded && (
-        <div className="p-4 border-t border-gray-200 space-y-3 mt-auto">
-          <button className="w-full py-2 text-sm text-gray-700 hover:text-gray-900 font-medium border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">Sign in</button>
-          <button className="w-full py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors">Sign up</button>
-        </div>
-      )}
+      {/* Auth Slot - Replaces hardcoded buttons */}
+      <AuthProfile isExpanded={isExpanded} />
+      
     </aside>
   )
 }
