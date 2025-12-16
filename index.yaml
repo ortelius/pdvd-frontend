@@ -2,6 +2,17 @@ apiVersion: v1
 entries:
   pdvd-frontend:
   - apiVersion: v2
+    appVersion: 12.0.1441
+    created: "2025-12-16T17:42:44.531832261Z"
+    description: Frontend microservice
+    digest: 3cfe129f032dfd5fa6d04a572c18e0eaf4349969e7a1cde13674d0f58c4fbbc7
+    icon: https://ortelius.github.io/pdvd-charts/ortelius.svg
+    name: pdvd-frontend
+    type: application
+    urls:
+    - https://github.com/ortelius/pdvd-frontend/releases/download/v12.0.1441/pdvd-frontend-12.0.1441.tgz
+    version: 12.0.1441
+  - apiVersion: v2
     appVersion: 12.0.1440
     created: "2025-12-15T23:34:28.756436179Z"
     description: Frontend microservice
@@ -617,4 +628,4 @@ entries:
     urls:
     - https://github.com/ortelius/pdvd-frontend/releases/download/pdvd-frontend-11.0.1330/pdvd-frontend-11.0.1330.tgz
     version: 12.0.1330
-generated: "2025-12-15T23:34:28.756060818Z"
+generated: "2025-12-16T17:42:44.531523202Z"
