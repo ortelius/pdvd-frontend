@@ -1,6 +1,6 @@
 import React from 'react'
 import { SidebarProvider } from '@/context/SidebarContext' 
-import AuthWrapper from '@/components/AuthWrapper' // Import the wrapper
+import AuthWrapper from '@/components/AuthWrapper' 
 import './globals.css'
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

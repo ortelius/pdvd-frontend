@@ -1,21 +1,24 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import AuthContext from '@/context/AuthContext'
+import AuthContext, { User } from '@/context/AuthContext'
 
 export default function AuthWrapper({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<{ username: string } | null>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  // 1. Check for existing session on mount (HttpOnly cookie)
+  // 1. Check Session on Mount (Checks for HttpOnly cookie validity)
   useEffect(() => {
     const checkSession = async () => {
       try {
-        // Your Go Backend endpoint that validates the cookie
-        const res = await fetch('/api/auth/me') 
+        const res = await fetch('/api/auth/me')
         if (res.ok) {
           const data = await res.json()
-          setUser({ username: data.username })
+          // Expects backend to return { username: "...", role: "..." }
+          setUser({ 
+            username: data.username, 
+            role: data.role || 'viewer' 
+          })
         }
       } catch (error) {
         console.error("Session check failed", error)
@@ -26,7 +29,7 @@ export default function AuthWrapper({ children }: { children: React.ReactNode })
     checkSession()
   }, [])
 
-  // 2. Login Logic: Send Basic Auth creds to Backend
+  // 2. Login Logic (Basic Auth Creds -> Cookie)
   const login = async (username: string, password: string) => {
     try {
       const res = await fetch('/api/auth/login', {
@@ -37,7 +40,10 @@ export default function AuthWrapper({ children }: { children: React.ReactNode })
 
       if (res.ok) {
         const data = await res.json()
-        setUser({ username: data.username || username })
+        setUser({ 
+          username: data.username || username, 
+          role: data.role || 'viewer' 
+        })
         return true
       }
     } catch (error) {
@@ -56,8 +62,14 @@ export default function AuthWrapper({ children }: { children: React.ReactNode })
     }
   }
 
+  // 4. RBAC Helper
+  const hasRole = (allowedRoles: string[]) => {
+    if (!user) return false
+    return allowedRoles.includes(user.role)
+  }
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, login, logout, isLoading, hasRole }}>
       {children}
     </AuthContext.Provider>
   )

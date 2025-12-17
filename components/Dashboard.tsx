@@ -185,7 +185,7 @@ export default function Dashboard() {
         {/* Header */}
         <div className="flex justify-between items-end">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Mission-Critical Vulnerability Dashboard</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Post-Deployment OSS Vulnerability Dashboard</h1>
             <div className="flex items-center gap-2 mt-1">
               <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs font-semibold border border-blue-200">Rolling 180 Days</span>
               <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded text-xs font-semibold border border-green-200">Endpoint Focused</span>

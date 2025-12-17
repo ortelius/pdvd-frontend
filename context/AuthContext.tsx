@@ -1,8 +1,9 @@
 'use client'
 import { createContext, useContext } from 'react'
 
-interface User {
+export interface User {
   username: string
+  role: 'admin' | 'editor' | 'viewer'
 }
 
 interface AuthContextType {
@@ -10,6 +11,7 @@ interface AuthContextType {
   login: (username: string, password: string) => Promise<boolean>
   logout: () => Promise<void>
   isLoading: boolean
+  hasRole: (allowedRoles: string[]) => boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)

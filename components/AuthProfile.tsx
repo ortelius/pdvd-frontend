@@ -2,28 +2,30 @@
 
 import React, { useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
+import { useRouter } from 'next/navigation'
 
 export default function AuthProfile({ isExpanded }: { isExpanded: boolean }) {
   const { user, login, logout, isLoading } = useAuth()
+  const router = useRouter()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState(false)
 
-  // Hide if sidebar is collapsed or auth state is loading
+  // Hide if collapsed or loading to prevent layout shift
   if (!isExpanded || isLoading) return null
 
-  // VIEW A: Logged In
+  // VIEW A: Logged In User Profile
   if (user) {
     return (
       <div className="p-4 border-t border-gray-200 mt-auto bg-gray-50">
         <div className="flex items-center gap-3 mb-3">
-          <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-xs">
-            {user.username.charAt(0).toUpperCase()}
+          <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-xs uppercase">
+            {user.username.charAt(0)}
           </div>
           <div className="overflow-hidden">
             <p className="text-sm font-medium text-gray-900 truncate">{user.username}</p>
-            <p className="text-xs text-green-600 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span> Online
+            <p className="text-[10px] text-gray-500 uppercase font-semibold tracking-wider">
+              {user.role}
             </p>
           </div>
         </div>
@@ -69,7 +71,7 @@ export default function AuthProfile({ isExpanded }: { isExpanded: boolean }) {
           />
         </div>
         
-        {error && <p className="text-xs text-red-600 font-medium">Invalid credentials</p>}
+        {error && <p className="text-xs text-red-600 font-medium text-center">Invalid credentials</p>}
 
         <button 
           type="submit"
@@ -77,6 +79,16 @@ export default function AuthProfile({ isExpanded }: { isExpanded: boolean }) {
         >
           Sign In
         </button>
+
+        <div className="text-center pt-1">
+          <button
+            type="button"
+            onClick={() => router.push('/auth/forgot-password')}
+            className="text-[10px] text-gray-500 hover:text-blue-600 underline"
+          >
+            Forgot Password / Activate Account
+          </button>
+        </div>
       </form>
     </div>
   )
