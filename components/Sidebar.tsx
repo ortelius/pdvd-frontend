@@ -123,7 +123,7 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
       {/* Header */}
       <div className={`h-16 flex items-center px-4 border-b border-gray-100 ${!isExpanded ? 'justify-center' : 'justify-between'}`}>
         <div className={`flex items-center gap-3 overflow-hidden transition-all duration-300 ${!isExpanded ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>
-           <img src="/logo.jpg" alt="Logo" className="h-10 w-10 flex-shrink-0 object-contain" />
+           <img src="/logo.svg" alt="Logo" className="h-10 w-10 flex-shrink-0 object-contain" />
            <span className="font-bold text-lg text-gray-800 tracking-tight">Ortelius</span>
         </div>
 
