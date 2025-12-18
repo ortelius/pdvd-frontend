@@ -52,8 +52,8 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
   const NavItem = ({ label, subLabel, icon: Icon, path }: any) => {
     const active = isActive(path)
     return (
-      <Link 
-        href={path} 
+      <Link
+        href={path}
         title={!isExpanded ? label : ''}
         className={`
           group flex items-center px-3 py-2 text-sm font-medium transition-colors relative
@@ -82,8 +82,8 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
   const showDetailFilters = isDetailView
   const showFilters = filters && setFilters && selectedCategory
   const hasActiveFilters = filters && (
-    (filters.vulnerabilityScore && filters.vulnerabilityScore.length > 0) || 
-    (filters.openssfScore && filters.openssfScore.length > 0) || 
+    (filters.vulnerabilityScore && filters.vulnerabilityScore.length > 0) ||
+    (filters.openssfScore && filters.openssfScore.length > 0) ||
     (filters.name && filters.name !== '') ||
     (filters.status && filters.status.length > 0) ||
     (filters.environment && filters.environment.length > 0) ||
@@ -119,7 +119,7 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
 
   return (
     <aside className={`${!isExpanded ? 'w-20' : 'w-64'} bg-white border-r border-gray-200 flex flex-col h-full overflow-y-auto flex-shrink-0 transition-all duration-300 ease-in-out`}>
-      
+
       {/* Header */}
       <div className={`h-16 flex items-center px-4 border-b border-gray-100 ${!isExpanded ? 'justify-center' : 'justify-between'}`}>
         <div className={`flex items-center gap-3 overflow-hidden transition-all duration-300 ${!isExpanded ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>
@@ -127,7 +127,7 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
            <span className="font-bold text-lg text-gray-800 tracking-tight">Ortelius</span>
         </div>
 
-        <button 
+        <button
           onClick={toggleSidebar}
           className="p-1.5 rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline-none transition-colors"
           title={isExpanded ? "Collapse Sidebar" : "Expand Sidebar"}
@@ -150,18 +150,18 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
             <div className={!isExpanded ? "hidden" : "px-4 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider"}>
               Administration
             </div>
-            
-            <NavItem 
-              label="User Management" 
-              subLabel="(Access Control)" 
-              icon={ManageAccountsIcon} 
-              path="/admin/users" 
+
+            <NavItem
+              label="User Management"
+              subLabel="(Access Control)"
+              icon={ManageAccountsIcon}
+              path="/admin/users"
             />
-            <NavItem 
-              label="System Settings" 
-              subLabel="(Config)" 
-              icon={SettingsIcon} 
-              path="/admin/settings" 
+            <NavItem
+              label="System Settings"
+              subLabel="(Config)"
+              icon={SettingsIcon}
+              path="/admin/settings"
             />
           </>
         )}
@@ -171,7 +171,7 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
       {showFilters && isExpanded && (
         <div className="border-t border-gray-200 p-4 animate-fadeIn">
           <div className="flex items-center justify-between mb-4">
-            <button 
+            <button
               onClick={() => setIsFiltersOpen(!isFiltersOpen)}
               className="flex items-center gap-2 hover:bg-gray-50 p-1 -ml-1 rounded transition-colors"
             >
@@ -180,7 +180,7 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
               {isFiltersOpen ? <ExpandLessIcon sx={{ width: 18, height: 18, color: '#6b7280' }} /> : <ExpandMoreIcon sx={{ width: 18, height: 18, color: '#6b7280' }} />}
             </button>
             {hasActiveFilters && (
-              <button 
+              <button
                 onClick={clearFilters}
                 className="text-xs text-blue-600 hover:text-blue-700 font-medium"
               >
@@ -311,7 +311,7 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
 
       {/* Auth Slot - Replaces hardcoded buttons */}
       <AuthProfile isExpanded={isExpanded} />
-      
+
     </aside>
   )
 }
