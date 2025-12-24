@@ -20,13 +20,16 @@ import {
 import { 
   graphqlQuery, 
   GET_DASHBOARD_VULNERABILITY_TREND,
-  GET_MTTR_ANALYSIS
+  GET_MTTR_ANALYSIS,
+  GET_DASHBOARD_GLOBAL_STATUS
 } from '@/lib/graphql'
 import { 
   GetVulnerabilityTrendResponse, 
   VulnerabilityTrend,
   GetMTTRAnalysisResponse,
-  MTTRAnalysis 
+  MTTRAnalysis,
+  GetDashboardGlobalStatusResponse,
+  DashboardGlobalStatus
 } from '@/lib/types'
 
 // --- Icons ---
@@ -57,6 +60,10 @@ export default function Dashboard() {
   
   const [mttrData, setMttrData] = useState<MTTRAnalysis | null>(null)
   const [loadingMttr, setLoadingMttr] = useState(true)
+  
+  const [globalStatus, setGlobalStatus] = useState<DashboardGlobalStatus | null>(null)
+  const [loadingGlobalStatus, setLoadingGlobalStatus] = useState(true)
+  
   const [error, setError] = useState<string | null>(null)
 
   // 1. Fetch MTTR & Core Metrics
@@ -79,7 +86,25 @@ export default function Dashboard() {
     fetchMetrics()
   }, [])
 
-  // 2. Fetch Trend Data (Trimmed to start at first activity)
+  // 2. Fetch Global Status
+  useEffect(() => {
+    const fetchGlobalStatus = async () => {
+      try {
+        setLoadingGlobalStatus(true)
+        const response = await graphqlQuery<GetDashboardGlobalStatusResponse>(
+          GET_DASHBOARD_GLOBAL_STATUS
+        )
+        setGlobalStatus(response.dashboardGlobalStatus)
+      } catch (err) {
+        console.error('Error fetching global status:', err)
+      } finally {
+        setLoadingGlobalStatus(false)
+      }
+    }
+    fetchGlobalStatus()
+  }, [])
+
+  // 3. Fetch Trend Data
   useEffect(() => {
     const fetchTrend = async () => {
       try {
@@ -91,14 +116,11 @@ export default function Dashboard() {
         
         const rawData = response.dashboardVulnerabilityTrend
         
-        // Find the first index where there is any vulnerability data
         const firstActiveIndex = rawData.findIndex(d => 
           (d.critical + d.high + d.medium + d.low) > 0
         )
 
-        // If we found active data and it's not at the very start
         if (firstActiveIndex > 0) {
-          // We keep one data point before the first active one (if available)
           const startIndex = Math.max(0, firstActiveIndex - 1)
           setTrendData(rawData.slice(startIndex))
         } else {
@@ -114,14 +136,11 @@ export default function Dashboard() {
     fetchTrend()
   }, [])
 
-  // Helper for date formatting
   const formatDate = (dateStr: string) => {
     try {
       return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     } catch { return dateStr }
   }
-
-  // --- Components for Sections ---
 
   const ExecutiveCard = ({ title, value, subValue, icon: Icon, colorClass, tooltip, compliance }: any) => (
     <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full">
@@ -148,7 +167,7 @@ export default function Dashboard() {
     </div>
   )
 
-  if (loadingMttr) {
+  if (loadingMttr || loadingGlobalStatus) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -205,33 +224,28 @@ export default function Dashboard() {
                     <h4 className="font-bold text-gray-900 text-sm">SLA Remediation Targets</h4>
                   </div>
                   
-                  <div className="grid grid-cols-3 gap-y-2 text-xs">
+                  <div className="grid grid-cols-2 gap-y-2 text-xs">
                     <div className="col-span-1 font-semibold text-gray-400 uppercase tracking-wider text-[10px]">Severity</div>
-                    <div className="col-span-1 text-right font-semibold text-gray-400 uppercase tracking-wider text-[10px]">Standard</div>
-                    <div className="col-span-1 text-right font-semibold text-gray-400 uppercase tracking-wider text-[10px]">High Risk</div>
+                    <div className="col-span-1 text-right font-semibold text-gray-400 uppercase tracking-wider text-[10px]">Standard SLA</div>
 
                     <div className="col-span-1 font-bold text-gray-800 flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-red-600"></span> Critical
                     </div>
                     <div className="col-span-1 text-right text-gray-600">15 days</div>
-                    <div className="col-span-1 text-right font-bold text-red-600">7 days</div>
 
                     <div className="col-span-1 font-bold text-gray-800 flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-orange-500"></span> High
                     </div>
                     <div className="col-span-1 text-right text-gray-600">30 days</div>
-                    <div className="col-span-1 text-right font-bold text-orange-600">15 days</div>
 
                     <div className="col-span-1 font-medium text-gray-700 flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-yellow-500"></span> Medium
                     </div>
                     <div className="col-span-1 text-right text-gray-600">90 days</div>
-                    <div className="col-span-1 text-right text-gray-600">90 days</div>
 
                     <div className="col-span-1 font-medium text-gray-700 flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-blue-500"></span> Low
                     </div>
-                    <div className="col-span-1 text-right text-gray-600">180 days</div>
                     <div className="col-span-1 text-right text-gray-600">180 days</div>
                   </div>
                   
@@ -505,10 +519,11 @@ export default function Dashboard() {
                 }
               />
 
-              {/* Top Right: Critical/High Backlog */}
+              {/* Top Right: Critical/High Backlog - UPDATED */}
               <ExecutiveCard
                 title="High-Risk Backlog"
-                value={by_severity.filter(s => s.severity === 'Critical' || s.severity === 'High')
+                value={globalStatus?.high_risk_backlog ?? 
+                       by_severity.filter(s => s.severity === 'Critical' || s.severity === 'High')
                        .reduce((acc, s) => acc + (s.open_count || 0), 0)}
                 subValue="Critical + High Open"
                 icon={WarningAmberIcon}
@@ -522,6 +537,14 @@ export default function Dashboard() {
                          .reduce((acc, s) => acc + (s.open_beyond_sla_count || 0), 0)} CVEs
                       </span>
                     </div>
+                    {globalStatus?.high_risk_delta !== undefined && globalStatus.high_risk_delta !== 0 && (
+                      <div className="flex justify-between items-center">
+                        <span>30d Change:</span>
+                        <span className={`font-medium ml-2 ${globalStatus.high_risk_delta > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                          {globalStatus.high_risk_delta > 0 ? '+' : ''}{globalStatus.high_risk_delta}
+                        </span>
+                      </div>
+                    )}
                     <div className="text-[10px] text-gray-400">
                       <strong>Calculation:</strong> Σ Open (Critical + High)
                     </div>
@@ -557,8 +580,7 @@ export default function Dashboard() {
               <ExecutiveCard
                 title="SLA Burn Rate"
                 value={(() => {
-                  // Calculate how many CVEs will breach SLA in next 30 days
-                  const criticalSLA = 7;
+                  const criticalSLA = 15;
                   const highSLA = 30;
                   const mediumSLA = 90;
                   const lowSLA = 180;
@@ -570,7 +592,6 @@ export default function Dashboard() {
                                 s.severity === 'Medium' ? mediumSLA : lowSLA;
                     const meanAge = s.mean_open_age || 0;
                     const openCount = s.open_count || 0;
-                    // Count CVEs that are within 30 days of SLA breach
                     if (meanAge >= sla - 30 && meanAge < sla) {
                       approaching += openCount;
                     }
@@ -661,7 +682,6 @@ export default function Dashboard() {
               </div>
 
               <div className="space-y-4 ml-4">
-                {/* SI-2 */}
                 <div id="nist-800-53-si2" className="border-l-2 border-indigo-400 pl-4">
                   <h4 className="font-bold text-gray-800 mb-2">
                     <a href="#nist-800-53-si2" className="text-indigo-700 hover:underline">SI-2</a>: Flaw Remediation (System and Information Integrity)
@@ -765,7 +785,6 @@ export default function Dashboard() {
               </div>
 
               <div className="space-y-4 ml-4">
-                {/* Section 3.2 */}
                 <div id="nist-800-190-s32" className="border-l-2 border-cyan-400 pl-4">
                   <h4 className="font-bold text-gray-800 mb-2">
                     <a href="#nist-800-190-s32" className="text-cyan-700 hover:underline">Section 3.2</a>: Registry Risks & Image Risks
@@ -787,7 +806,6 @@ export default function Dashboard() {
                   </ul>
                 </div>
 
-                {/* Section 3.3 */}
                 <div id="nist-800-190-s33" className="border-l-2 border-cyan-400 pl-4">
                   <h4 className="font-bold text-gray-800 mb-2">
                     <a href="#nist-800-190-s33" className="text-cyan-700 hover:underline">Section 3.3</a>: Orchestrator Risks & Runtime Monitoring
@@ -832,7 +850,6 @@ export default function Dashboard() {
 
               <div className="space-y-6 ml-4">
                 
-                {/* RV.1 */}
                 <div id="nist-800-218-rv1" className="border-l-2 border-green-400 pl-4">
                   <h4 className="font-bold text-gray-800 mb-2">
                     <a href="#nist-800-218-rv1" className="text-green-700 hover:underline">RV.1</a>: Identify and Confirm Vulnerabilities on an Ongoing Basis
@@ -855,7 +872,6 @@ export default function Dashboard() {
                   </ul>
                 </div>
 
-                {/* RV.2 */}
                 <div id="nist-800-218-rv2" className="border-l-2 border-purple-400 pl-4">
                   <h4 className="font-bold text-gray-800 mb-2">
                     <a href="#nist-800-218-rv2" className="text-purple-700 hover:underline">RV.2</a>: Assess, Prioritize, and Remediate Vulnerabilities
@@ -879,7 +895,6 @@ export default function Dashboard() {
                   </ul>
                 </div>
 
-                {/* RV.3 */}
                 <div id="nist-800-218-rv3" className="border-l-2 border-amber-400 pl-4">
                   <h4 className="font-bold text-gray-800 mb-2">
                     <a href="#nist-800-218-rv3" className="text-amber-700 hover:underline">RV.3</a>: Analyze Vulnerabilities to Identify Their Root Causes

@@ -72,6 +72,26 @@ export interface GetVulnerabilityTrendResponse {
   dashboardVulnerabilityTrend: VulnerabilityTrend[]
 }
 
+export interface SeverityMetric {
+  count: number
+  delta: number
+}
+
+export interface DashboardGlobalStatus {
+  critical: SeverityMetric
+  high: SeverityMetric
+  medium: SeverityMetric
+  low: SeverityMetric
+  total_count: number
+  total_delta: number
+  high_risk_backlog: number
+  high_risk_delta: number
+}
+
+export interface GetDashboardGlobalStatusResponse {
+  dashboardGlobalStatus: DashboardGlobalStatus
+}
+
 // --- Application Core Types ---
 
 export interface Vulnerability {

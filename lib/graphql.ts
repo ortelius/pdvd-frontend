@@ -290,14 +290,16 @@ export const GET_DASHBOARD_VULNERABILITY_TREND = `
 `
 
 export const GET_DASHBOARD_GLOBAL_STATUS = `
-  query DashboardGlobalStatus($limit: Int) {
-    dashboardGlobalStatus(limit: $limit) {
+  query DashboardGlobalStatus {
+    dashboardGlobalStatus {
       critical { count delta }
       high { count delta }
       medium { count delta }
       low { count delta }
       total_count
       total_delta
+      high_risk_backlog
+      high_risk_delta
     }
   }
 `
