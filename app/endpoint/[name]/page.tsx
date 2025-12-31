@@ -14,6 +14,9 @@ import WhatshotIcon from '@mui/icons-material/Whatshot'
 import NotificationsIcon from '@mui/icons-material/Notifications'
 import WarningIcon from '@mui/icons-material/Warning'
 
+// --- Local SVG Icon Imports ---
+import { Bomb } from '@/components/icons'
+
 interface EndpointRelease {
   release_name: string
   release_version: string
@@ -187,7 +190,6 @@ export default function EndpointDetailPage() {
     return a.package.localeCompare(b.package)
   })
 
-  // Safe total count calculation
   const totalCount = 
     endpoint.total_vulnerabilities.critical + 
     endpoint.total_vulnerabilities.high + 
@@ -343,7 +345,7 @@ export default function EndpointDetailPage() {
                           : 'bg-blue-100 text-blue-800'
                       } flex items-center gap-1 w-fit`}>
                         {row.severity === 'critical' ? (
-                            <span className="material-symbols-outlined" style={{ fontSize: '12px', color: 'rgb(185, 28, 28)' }}>bomb</span>
+                            <Bomb size={12} color="rgb(185, 28, 28)" />
                         ) : 
                           row.severity === 'high' ? <WhatshotIcon sx={{ width: 12, height: 12, color: 'rgb(194, 65, 12)' }} /> : 
                           row.severity === 'medium' ? <NotificationsIcon sx={{ width: 12, height: 12, color: 'rgb(202, 138, 4)' }} /> : 

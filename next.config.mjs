@@ -6,7 +6,10 @@ const __dirname = dirname(__filename)
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  turbopack: {}, // ✅ Added to silence the Turbopack + Webpack conflict
+  turbopack: {},
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ['error', 'warn'] } : false,
+  },
   webpack: (config) => {
     config.resolve.alias['@'] = __dirname
     return config
