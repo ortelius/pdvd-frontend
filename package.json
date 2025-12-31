@@ -44,10 +44,12 @@
     "react-is": "^19.0.0"
   },
   "browserslist": [
-    ">0.5%",
-    "last 2 versions",
-    "not dead",
-    "not IE 11",
-    "not op_mini all"
+    "Chrome >= 92",
+    "Firefox >= 90",
+    "Safari >= 15.4",
+    "Edge >= 92",
+    "and_chr >= 92",
+    "and_ff >= 90",
+    "ios_saf >= 15.4"
   ]
 }

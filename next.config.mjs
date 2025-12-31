@@ -14,6 +14,8 @@ const nextConfig = {
     config.resolve.alias['@'] = __dirname
     return config
   },
+  // Next.js 16 automatically respects browserslist config
+  // With your modern browser targets, no polyfills will be added for ES2022+ features
 }
 
 export default nextConfig

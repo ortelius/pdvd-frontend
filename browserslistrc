@@ -1,7 +1,8 @@
->0.5%
-last 2 versions
-not dead
-not IE 11
-not op_mini all
-not android < 5
-not ios_saf < 12
+# Modern browsers only - all support Array.prototype.at() and ES2022+ features
+Chrome >= 92
+Firefox >= 90
+Safari >= 15.4
+Edge >= 92
+and_chr >= 92
+and_ff >= 90
+ios_saf >= 15.4
