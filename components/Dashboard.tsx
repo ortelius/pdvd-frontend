@@ -305,7 +305,7 @@ export default function Dashboard() {
           <ExecutiveCard 
             title="MTTR (Post-Deploy)" 
             value={`${executive_summary.mttr_post_deployment.toFixed(1)}d`}
-            subValue="mission critical"
+            subValue=""
             icon={AccessTimeIcon}
             colorClass="text-indigo-600"
             compliance={<><a href="#nist-800-218-rv2" className="text-blue-600 underline hover:text-blue-800">NIST 800-218 RV.2</a><br/><a href="#nist-800-190-s33" className="text-blue-600 underline hover:text-blue-800">NIST 800-190 §3.3</a></>}

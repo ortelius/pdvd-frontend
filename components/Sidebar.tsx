@@ -4,10 +4,10 @@ import React, { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSidebar } from '@/context/SidebarContext'
-import { useAuth } from '@/context/AuthContext'       // <--- 1. Import Context
-import AuthProfile from '@/components/AuthProfile'    // <--- 2. Import Slot
+import { useAuth } from '@/context/AuthContext'
+import AuthProfile from '@/components/AuthProfile'
 
-// Icons
+// Material UI Icons
 import DashboardIcon from '@mui/icons-material/Dashboard'
 import HubIcon from '@mui/icons-material/Hub'
 import Inventory2Icon from '@mui/icons-material/Inventory2'
@@ -17,11 +17,10 @@ import MenuIcon from '@mui/icons-material/Menu'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
-import ManageAccountsIcon from '@mui/icons-material/ManageAccounts' // <--- 3. Import Admin Icon
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts'
 
-const VulnerabilitiesIcon = ({ className, style }: any) => (
-  <span className={`material-symbols-outlined ${className}`} style={style}>threat_intelligence</span>
-)
+// Local SVG Icons
+import { ThreatIntelligence } from '@/components/icons'
 
 interface SidebarProps {
   filters?: {
@@ -41,7 +40,7 @@ interface SidebarProps {
 export default function Sidebar({ filters, setFilters, selectedCategory }: SidebarProps) {
   const pathname = usePathname()
   const { isExpanded, toggleSidebar } = useSidebar()
-  const { hasRole } = useAuth() // <--- 4. Get Role Checker
+  const { hasRole } = useAuth()
   const [isFiltersOpen, setIsFiltersOpen] = useState(true)
 
   const isActive = (path: string) => {
@@ -141,9 +140,8 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
         <NavItem label="Synced Endpoints" subLabel="(Where It's Running)" icon={HubIcon} path="/endpoints" />
         <NavItem label="Project Releases" subLabel="(Where to Fix It)" icon={Inventory2Icon} path="/releases" />
         <NavItem label="Mitigations" subLabel="(How to Fix It)" icon={BuildIcon} path="/mitigations" />
-        <NavItem label="Vulnerabilities" subLabel="(The Threat)" icon={VulnerabilitiesIcon} path="/vulnerabilities" />
+        <NavItem label="Vulnerabilities" subLabel="(The Threat)" icon={ThreatIntelligence} path="/vulnerabilities" />
 
-        {/* <--- 5. RBAC PROTECTED ADMIN SECTION ---> */}
         {hasRole(['admin']) && (
           <>
             <div className="my-4 border-t border-gray-200" />
@@ -203,7 +201,6 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
                   />
                 </div>
               )}
-              {/* (Endpoint filters omitted for brevity, include if present in previous version) */}
               {showStatusFilters && (
                 <>
                   <div>
@@ -222,7 +219,6 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
                       ))}
                     </div>
                   </div>
-                  {/* ... other endpoint filters ... */}
                 </>
               )}
 
@@ -309,7 +305,7 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
         </div>
       )}
 
-      {/* Auth Slot - Replaces hardcoded buttons */}
+      {/* Auth Slot */}
       <AuthProfile isExpanded={isExpanded} />
 
     </aside>
