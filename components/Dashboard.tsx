@@ -1,6 +1,8 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
+import Skeleton from 'react-loading-skeleton'
+import 'react-loading-skeleton/dist/skeleton.css'
 import {
   AreaChart,
   Area,
@@ -53,6 +55,50 @@ const COLORS = {
 }
 
 const PIE_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
+
+// Skeleton Components
+const SkeletonCard = () => (
+  <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm h-full">
+    <Skeleton circle width={40} height={40} />
+    <Skeleton width="75%" style={{ marginTop: 12 }} />
+    <Skeleton width="50%" height={32} style={{ marginTop: 8 }} />
+    <Skeleton count={2} style={{ marginTop: 12 }} />
+  </div>
+)
+
+const SkeletonTable = () => (
+  <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col" style={{ minHeight: '400px' }}>
+    <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
+      <Skeleton width="40%" height={24} />
+    </div>
+    <div className="overflow-x-auto flex-1 p-6">
+      <Skeleton count={6} height={40} style={{ marginTop: 8 }} />
+    </div>
+  </div>
+)
+
+const SkeletonChart = ({ height = '400px' }: { height?: string }) => (
+  <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex flex-col" style={{ minHeight: height }}>
+    <Skeleton width="50%" height={24} style={{ marginBottom: 24 }} />
+    <Skeleton height={parseInt(height) - 100} />
+  </div>
+)
+
+const SkeletonVelocityCard = () => (
+  <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex flex-col" style={{ minHeight: '500px' }}>
+    <Skeleton width="70%" height={24} style={{ marginBottom: 16 }} />
+    <div className="grid grid-cols-2 gap-4 mb-6">
+      {[1, 2, 3, 4].map(i => (
+        <div key={i}>
+          <Skeleton count={3} />
+        </div>
+      ))}
+    </div>
+    <div className="pt-6 border-t border-gray-200">
+      <Skeleton count={3} height={60} />
+    </div>
+  </div>
+)
 
 export default function Dashboard() {
   const [trendData, setTrendData] = useState<VulnerabilityTrend[]>([])
@@ -167,12 +213,45 @@ export default function Dashboard() {
     </div>
   )
 
+  // Loading skeleton with fixed layout
   if (loadingMttr || loadingGlobalStatus) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-gray-600 font-medium">Loading Dashboard Metrics...</p>
+      <div className="flex-1 p-6 bg-gray-50 min-h-screen space-y-8 font-sans overflow-y-auto">
+        {/* Header Skeleton */}
+        <div className="flex justify-between items-end">
+          <div className="flex-1">
+            <Skeleton width="60%" height={32} />
+            <div className="flex gap-2 mt-2">
+              <Skeleton width={120} height={24} />
+              <Skeleton width={140} height={24} />
+              <Skeleton width={200} height={24} />
+            </div>
+          </div>
+        </div>
+
+        {/* Executive Summary Cards Skeleton */}
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          {[1, 2, 3, 4, 5].map(i => <SkeletonCard key={i} />)}
+        </div>
+
+        {/* Main Content Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <SkeletonTable />
+          </div>
+          <div>
+            <SkeletonChart height="400px" />
+          </div>
+        </div>
+
+        {/* Trend Section Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <SkeletonChart height="500px" />
+          </div>
+          <div>
+            <SkeletonVelocityCard />
+          </div>
         </div>
       </div>
     )
@@ -335,7 +414,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
           {/* --- Section A & B & C: Detailed Metrics Table --- */}
-          <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
+          <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col" style={{ minHeight: '400px' }}>
             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
               <div className="flex justify-between items-center">
                 <h2 className="text-lg font-bold text-gray-900">Severity Breakdown & SLA Compliance</h2>
@@ -400,7 +479,7 @@ export default function Dashboard() {
           </div>
 
           {/* --- Section D: Volume & Flow (Backlog Delta) --- */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex flex-col">
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex flex-col" style={{ minHeight: '400px' }}>
             <div className="flex justify-between items-start mb-4">
               <h2 className="text-lg font-bold text-gray-900">Volume & Flow</h2>
               <span className="text-xs text-gray-400">
@@ -420,7 +499,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="flex-1 min-h-[200px]">
+            <div className="flex-1" style={{ minHeight: '200px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={volumeChartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
@@ -442,14 +521,14 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
           {/* --- Section F: Trend Chart --- */}
-          <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex flex-col">
+          <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex flex-col" style={{ minHeight: '500px' }}>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-lg font-bold text-gray-900">Vulnerability Trend (180 Days)</h2>
               <span className="text-xs text-gray-400">
                 <a href="#nist-800-218-rv1" className="text-blue-600 underline hover:text-blue-800">NIST 800-218 RV.1</a> • <a href="#nist-800-137" className="text-blue-600 underline hover:text-blue-800">NIST 800-137</a>
               </span>
             </div>
-            <div className="flex-1 min-h-[400px]">
+            <div className="flex-1" style={{ minHeight: '400px' }}>
               {loadingTrend ? (
                 <div className="flex items-center justify-center h-full text-gray-400">Loading trend...</div>
               ) : (
@@ -486,7 +565,7 @@ export default function Dashboard() {
           </div>
 
           {/* --- Section E: Security Velocity & Impact Metrics --- */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex flex-col">
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex flex-col" style={{ minHeight: '500px' }}>
             <div className="mb-4 flex justify-between items-start">
               <div>
                 <h2 className="text-lg font-bold text-gray-900">Security Velocity & Impact Metrics</h2>
