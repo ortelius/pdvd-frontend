@@ -10,12 +10,18 @@ const nextConfig = {
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ['error', 'warn'] } : false,
   },
+  transpilePackages: [
+    '@mui/material',
+    '@mui/icons-material',
+    '@emotion/react',
+    '@emotion/styled',
+    'recharts',
+    'react-loading-skeleton'
+  ],
   webpack: (config) => {
     config.resolve.alias['@'] = __dirname
     return config
   },
-  // Next.js 16 automatically respects browserslist config
-  // With your modern browser targets, no polyfills will be added for ES2022+ features
 }
 
 export default nextConfig
