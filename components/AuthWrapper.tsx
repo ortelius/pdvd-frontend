@@ -7,14 +7,29 @@ export default function AuthWrapper({ children }: { children: React.ReactNode })
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  // 1. Check Session on Mount (Checks for HttpOnly cookie validity)
+  // Helper to get the REST endpoint from the internal config route
+const getRestEndpoint = async () => {
+  const res = await fetch('/api/config')
+  
+  // Safety check: ensure the response is OK and is JSON
+  if (!res.ok || !res.headers.get('content-type')?.includes('application/json')) {
+    console.error('Failed to load config, received HTML/Error instead of JSON')
+    // Fallback to a safe default if config fails
+    return 'http://localhost:3000/api/v1' 
+  }
+
+  const config = await res.json()
+  return config.restEndpoint || 'http://localhost:3000/api/v1'
+}
+
+  // 1. Check Session on Mount
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const res = await fetch('/api/auth/me')
+        const restEndpoint = await getRestEndpoint()
+        const res = await fetch(`${restEndpoint}/auth/me`)
         if (res.ok) {
           const data = await res.json()
-          // Expects backend to return { username: "...", role: "..." }
           setUser({ 
             username: data.username, 
             role: data.role || 'viewer' 
@@ -29,10 +44,11 @@ export default function AuthWrapper({ children }: { children: React.ReactNode })
     checkSession()
   }, [])
 
-  // 2. Login Logic (Basic Auth Creds -> Cookie)
+  // 2. Login Logic
   const login = async (username: string, password: string) => {
     try {
-      const res = await fetch('/api/auth/login', {
+      const restEndpoint = await getRestEndpoint()
+      const res = await fetch(`${restEndpoint}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
@@ -55,14 +71,14 @@ export default function AuthWrapper({ children }: { children: React.ReactNode })
   // 3. Logout Logic
   const logout = async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' })
+      const restEndpoint = await getRestEndpoint()
+      await fetch(`${restEndpoint}/auth/logout`, { method: 'POST' })
       setUser(null)
     } catch (error) {
       console.error("Logout error", error)
     }
   }
 
-  // 4. RBAC Helper
   const hasRole = (allowedRoles: string[]) => {
     if (!user) return false
     return allowedRoles.includes(user.role)

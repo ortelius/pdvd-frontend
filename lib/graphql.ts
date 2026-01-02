@@ -10,12 +10,18 @@ async function getGraphqlEndpoint (): Promise<string> {
   }
 
   try {
-    const res = await fetch('/config')
-    if (!res.ok) {
-      console.warn(`Failed to fetch /config (Status: ${res.status}). Falling back to default.`)
+    // 1. Updated to match the app/api/config/route.ts location
+    const res = await fetch('/api/config')
+    
+    // 2. Safety check: ensure the response is valid JSON
+    if (!res.ok || !res.headers.get('content-type')?.includes('application/json')) {
+      console.warn(`Failed to fetch /api/config (Status: ${res.status}). Falling back to default.`)
       return '/api/v1/graphql'
     }
+
     const data = await res.json()
+    
+    // 3. Explicitly extract graphqlEndpoint as the response now contains two endpoints
     if (typeof data.graphqlEndpoint === 'string') {
       activeGraphqlEndpoint = data.graphqlEndpoint
       return activeGraphqlEndpoint as string
@@ -40,6 +46,7 @@ export async function graphqlQuery<T> (query: string, variables?: Record<string,
   })
 
   if (!response.ok) {
+    // If endpoint is incorrect (e.g. results in a 404 HTML page), this throws the "Not Found" error
     throw new Error(`GraphQL request failed: ${response.statusText}`)
   }
 

@@ -3,6 +3,8 @@
 import React, { useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useRouter } from 'next/navigation'
+import LoginIcon from '@mui/icons-material/Login'
+import LogoutIcon from '@mui/icons-material/Logout'
 
 export default function AuthProfile({ isExpanded }: { isExpanded: boolean }) {
   const { user, login, logout, isLoading } = useAuth()
@@ -11,40 +13,77 @@ export default function AuthProfile({ isExpanded }: { isExpanded: boolean }) {
   const [password, setPassword] = useState('')
   const [error, setError] = useState(false)
 
-  // Hide if collapsed or loading to prevent layout shift
-  if (!isExpanded || isLoading) return null
+  // Show a loading spinner instead of hiding the component
+  if (isLoading) {
+    return (
+      <div className="p-4 border-t border-gray-200 mt-auto flex justify-center">
+        <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    )
+  }
 
   // VIEW A: Logged In User Profile
   if (user) {
     return (
       <div className="p-4 border-t border-gray-200 mt-auto bg-gray-50">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-xs uppercase">
+        <div className={`flex items-center gap-3 ${!isExpanded ? 'justify-center' : 'mb-3'}`}>
+          <div 
+            className="w-8 h-8 rounded-full bg-blue-600 flex-shrink-0 flex items-center justify-center text-white font-bold text-xs uppercase"
+            title={user.username}
+          >
             {user.username.charAt(0)}
           </div>
-          <div className="overflow-hidden">
-            <p className="text-sm font-medium text-gray-900 truncate">{user.username}</p>
-            <p className="text-[10px] text-gray-500 uppercase font-semibold tracking-wider">
-              {user.role}
-            </p>
-          </div>
+          
+          {isExpanded && (
+            <div className="overflow-hidden">
+              <p className="text-sm font-medium text-gray-900 truncate">{user.username}</p>
+              <p className="text-[10px] text-gray-500 uppercase font-semibold tracking-wider">
+                {user.role}
+              </p>
+            </div>
+          )}
         </div>
-        <button 
-          onClick={logout}
-          className="w-full py-1.5 text-xs text-red-600 border border-red-200 rounded hover:bg-red-50 transition-colors"
-        >
-          Sign Out
-        </button>
+
+        {isExpanded ? (
+          <button 
+            onClick={logout}
+            className="w-full py-1.5 text-xs text-red-600 border border-red-200 rounded hover:bg-red-50 transition-colors"
+          >
+            Sign Out
+          </button>
+        ) : (
+          <button 
+            onClick={logout}
+            title="Sign Out"
+            className="mt-3 w-full flex justify-center text-red-600 hover:text-red-800"
+          >
+            <LogoutIcon sx={{ fontSize: 20 }} />
+          </button>
+        )}
       </div>
     )
   }
 
-  // VIEW B: Login Form
+  // VIEW B: Login Section (Form when expanded, Icon when collapsed)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(false)
     const success = await login(username, password)
     if (!success) setError(true)
+  }
+
+  if (!isExpanded) {
+    return (
+      <div className="p-4 border-t border-gray-200 mt-auto flex flex-col items-center gap-4">
+        <button 
+          onClick={() => router.push('/auth/login')} // Or a function to expand sidebar
+          className="text-blue-600 hover:text-blue-800"
+          title="Sign In"
+        >
+          <LoginIcon sx={{ fontSize: 24 }} />
+        </button>
+      </div>
+    )
   }
 
   return (
