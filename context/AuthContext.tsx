@@ -1,10 +1,6 @@
 'use client'
 import { createContext, useContext } from 'react'
-
-export interface User {
-  username: string
-  role: 'admin' | 'editor' | 'viewer'
-}
+import { User } from '@/lib/auth'
 
 interface AuthContextType {
   user: User | null
