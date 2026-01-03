@@ -1,6 +1,7 @@
 import React from 'react'
 import type { Metadata } from 'next'
 import { SidebarProvider } from '@/context/SidebarContext' 
+import { ThemeProvider } from '@/context/ThemeContext'
 import AuthWrapper from '@/components/AuthWrapper' 
 import './globals.css'
 
@@ -83,13 +84,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="dns-prefetch" href="https://app.ortelius.io" />
       </head>
       <body>
-        <AuthWrapper>
-          <SidebarProvider>
-            <div className="flex min-h-screen">
-              {children}
-            </div>
-          </SidebarProvider>
-        </AuthWrapper>
+        <ThemeProvider>
+          <AuthWrapper>
+            <SidebarProvider>
+              <div className="flex min-h-screen">
+                {children}
+              </div>
+            </SidebarProvider>
+          </AuthWrapper>
+        </ThemeProvider>
       </body>
     </html>
   )
