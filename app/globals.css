@@ -79,20 +79,20 @@ button.bg-purple-700 {
 
 /* Light theme - darker text for better readability */
 .text-gray-400 {
-  color: rgb(55, 65, 81); /* Much darker - gray-700 level */
+  color: rgb(107, 114, 128); /* gray-500 level */
 }
 
 .text-gray-500 {
-  color: rgb(31, 41, 55); /* Much darker - gray-800 level */
+  color: rgb(75, 85, 99); /* gray-600 level */
 }
 
-/* Small text in light mode should be much darker for readability */
+/* Small text in light mode should be darker for readability */
 .text-xs {
-  color: rgb(31, 41, 55); /* gray-800 level */
+  color: rgb(75, 85, 99); /* gray-600 level */
 }
 
 .text-sm {
-  color: rgb(17, 24, 39); /* gray-900 level */
+  color: rgb(55, 65, 81); /* gray-700 level */
 }
 
 /* GitHub/Gmail inspired dark mode with maximum card visibility */
