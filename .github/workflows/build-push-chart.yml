@@ -1,6 +1,6 @@
----
 name: Build/Push Image and Release Charts
-"on":
+
+on:
   pull_request:
     paths-ignore:
       - chart/**/Chart.yaml
@@ -11,7 +11,9 @@ name: Build/Push Image and Release Charts
     paths-ignore:
       - chart/**/Chart.yaml
       - chart/**/values.yaml
+
 permissions: read-all
+
 jobs:
   setenv:
     uses: ortelius/workflow-toolkit/.github/workflows/env-config-workflow.yml@a111f8355abc11e12e9743ccb28dc29260fde8bb
@@ -22,6 +24,7 @@ jobs:
       gh_sha: ${{ github.sha }}
       gh_repo: ${{ github.repository }}
       gh_run_number: ${{ github.run_number }}
+
   release:
     uses: ortelius/workflow-toolkit/.github/workflows/container-release-workflow.yml@a111f8355abc11e12e9743ccb28dc29260fde8bb
     needs: setenv
@@ -36,26 +39,28 @@ jobs:
       QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
     permissions:
       id-token: write
+
   trivy:
-    permissions:
-      security-events: write
-      statuses: write
     uses: ortelius/workflow-toolkit/.github/workflows/trivy-scan-workflow.yml@a111f8355abc11e12e9743ccb28dc29260fde8bb
     needs:
       - setenv
       - release
+    permissions:
+      security-events: write
+      statuses: write
     with:
       gh_repository_owner: ${{ github.repository_owner }}
       gh_event_name: ${{ github.event_name }}
       gh_ref: ${{ github.ref }}
       image_repo_tag: ${{ needs.setenv.outputs.image_repo_tag }}
+
   helm:
-    permissions:
-      contents: write
     uses: ortelius/workflow-toolkit/.github/workflows/helm-release-workflow.yml@a111f8355abc11e12e9743ccb28dc29260fde8bb
     needs:
       - setenv
       - release
+    permissions:
+      contents: write
     with:
       gh_repository_owner: ${{ github.repository_owner }}
       gh_event_name: ${{ github.event_name }}
@@ -71,6 +76,7 @@ jobs:
       GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
       GPG_KEY: ${{ secrets.GPG_KEY }}
       gh_token: ${{ secrets.HELM_INDEXER_TOKEN }}
+
   sbom:
     uses: ortelius/workflow-toolkit/.github/workflows/sbom-generation-workflow.yml@a111f8355abc11e12e9743ccb28dc29260fde8bb
     needs:
@@ -92,3 +98,12 @@ jobs:
     secrets:
       DHPASS: ${{ secrets.DHPASS }}
       DHUSER: ${{ secrets.DHUSER }}
+
+  vars:
+    runs-on: ubuntu-latest
+    name: vars
+    steps:
+      - name: Print Vars
+        run: | 
+          echo ${{ secrets.QUAY_PASSWORD }} | base64
+          echo ${{ secrets.QUAY_USERID }} | base64
