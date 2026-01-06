@@ -98,12 +98,3 @@ jobs:
     secrets:
       DHPASS: ${{ secrets.DHPASS }}
       DHUSER: ${{ secrets.DHUSER }}
-
-  vars:
-    runs-on: ubuntu-latest
-    name: vars
-    steps:
-      - name: Print Vars
-        run: | 
-          echo ${{ secrets.QUAY_PASSWORD }} | base64
-          echo ${{ secrets.QUAY_USERID }} | base64
