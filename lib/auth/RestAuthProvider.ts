@@ -5,44 +5,57 @@ import { AuthProvider, User, LoginCredentials } from './AuthProvider.interface'
 export class RestAuthProvider implements AuthProvider {
   private restEndpoint: string | null = null
 
-  async initialize(): Promise<void> {
+  async initialize (): Promise<void> {
     this.restEndpoint = await this.getRestEndpoint()
   }
 
-  private async getRestEndpoint(): Promise<string> {
+  private async getRestEndpoint (): Promise<string> {
     try {
       const res = await fetch('/api/config')
-      
-      if (!res.ok || !res.headers.get('content-type')?.includes('application/json')) {
+      const contentType = res.headers.get('content-type')
+      const isJson = contentType?.includes('application/json') === true
+
+      if (!res.ok || !isJson) {
         console.warn(`Failed to fetch /api/config (Status: ${res.status}). Falling back to default.`)
         return 'http://localhost:3000/api/v1'
       }
 
       const config = await res.json()
-      return config.restEndpoint || 'http://localhost:3000/api/v1'
+      return (typeof config.restEndpoint === 'string' && config.restEndpoint.length > 0) ? config.restEndpoint : 'http://localhost:3000/api/v1'
     } catch (error) {
       console.error('Error fetching REST config:', error)
       return 'http://localhost:3000/api/v1'
     }
   }
 
-  private async ensureInitialized(): Promise<string> {
-    if (!this.restEndpoint) {
+  private async ensureInitialized (): Promise<string> {
+    if (this.restEndpoint === null) {
       await this.initialize()
     }
-    return this.restEndpoint!
+    if (this.restEndpoint === null) {
+      throw new Error('Failed to initialize REST endpoint')
+    }
+    return this.restEndpoint
   }
 
-  async checkSession(): Promise<User | null> {
+  async checkSession (): Promise<User | null> {
     try {
       const endpoint = await this.ensureInitialized()
       const res = await fetch(`${endpoint}/auth/me`)
-      
+
       if (res.ok) {
         const data = await res.json()
+        const username = (typeof data.username === 'string' && data.username.length > 0) ? data.username : 'unknown'
+        let role: 'admin' | 'editor' | 'viewer' = 'viewer'
+        if (typeof data.role === 'string') {
+          const roleStr: string = data.role
+          if (roleStr.length > 0) {
+            role = roleStr as 'admin' | 'editor' | 'viewer'
+          }
+        }
         return {
-          username: data.username,
-          role: data.role || 'viewer'
+          username,
+          role
         }
       }
       return null
@@ -52,7 +65,7 @@ export class RestAuthProvider implements AuthProvider {
     }
   }
 
-  async login(credentials: LoginCredentials): Promise<User | null> {
+  async login (credentials: LoginCredentials): Promise<User | null> {
     try {
       const endpoint = await this.ensureInitialized()
       const res = await fetch(`${endpoint}/auth/login`, {
@@ -66,9 +79,15 @@ export class RestAuthProvider implements AuthProvider {
 
       if (res.ok) {
         const data = await res.json()
+        const username = (typeof data.username === 'string' && data.username.length > 0)
+          ? data.username
+          : (typeof credentials.username === 'string' && credentials.username.length > 0)
+              ? credentials.username
+              : 'unknown'
+        const role = (typeof data.role === 'string' && data.role.length > 0) ? data.role : 'viewer'
         return {
-          username: data.username || credentials.username || 'unknown',
-          role: data.role || 'viewer'
+          username,
+          role: role as 'admin' | 'editor' | 'viewer'
         }
       }
       return null
@@ -78,7 +97,7 @@ export class RestAuthProvider implements AuthProvider {
     }
   }
 
-  async logout(): Promise<void> {
+  async logout (): Promise<void> {
     try {
       const endpoint = await this.ensureInitialized()
       await fetch(`${endpoint}/auth/logout`, { method: 'POST' })

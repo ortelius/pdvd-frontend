@@ -6,6 +6,13 @@ PRINT_ALPACA: false
 FILEIO_REPORTER: false
 VALIDATE_ALL_CODEBASE: true
 
+# Add custom arguments for Kingfisher scan
+REPOSITORY_KINGFISHER_ARGUMENTS:
+  - --exclude
+  - ".next"
+  - --exclude
+  - node_modules
+
 YAML_V8R_FILTER_REGEX_EXCLUDE: .mega-linter.yml
 YAML_PRETTIER_FILTER_REGEX_EXCLUDE: templates/
 YAML_YAMLLINT_FILTER_REGEX_EXCLUDE: templates/

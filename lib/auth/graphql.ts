@@ -5,15 +5,12 @@ let activeGraphqlEndpoint: string | null = null
 
 // Helper to get the endpoint.
 async function getGraphqlEndpoint (): Promise<string> {
-  if (activeGraphqlEndpoint !== null) {
+  if (typeof activeGraphqlEndpoint === 'string') {
     return activeGraphqlEndpoint
   }
 
   try {
-    // 1. Updated to match the app/api/config/route.ts location
     const res = await fetch('/api/config')
-
-    // 2. Safety check: ensure the response is valid JSON
     const contentType = res.headers.get('content-type')
     const isJson = contentType?.includes('application/json') === true
 
@@ -24,14 +21,14 @@ async function getGraphqlEndpoint (): Promise<string> {
 
     const data = await res.json()
 
-    // 3. Explicitly extract graphqlEndpoint as the response now contains two endpoints
     if (typeof data.graphqlEndpoint === 'string') {
       activeGraphqlEndpoint = data.graphqlEndpoint
-      return activeGraphqlEndpoint as string
+      return activeGraphqlEndpoint
     }
   } catch (error) {
     console.error('Error fetching GraphQL config:', error)
   }
+
   return '/api/v1/graphql'
 }
 
