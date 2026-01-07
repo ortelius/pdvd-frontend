@@ -60,16 +60,16 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
         title={!isExpanded ? label : ''}
         className={`
           group flex items-center px-3 py-2 text-sm font-medium transition-colors relative rounded-md mx-2
-          ${active ? 'bg-blue-600/10 text-blue-500' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/50 hover:text-gray-900 dark:hover:text-white'}
+          ${active ? 'bg-blue-50 dark:bg-blue-600/10 text-blue-600 dark:text-blue-500' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/50 hover:text-gray-900 dark:hover:text-white'}
           ${!isExpanded ? 'justify-center' : ''}
         `}
       >
         {active && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r-sm" />}
-        <Icon className={`w-6 h-6 flex-shrink-0 ${active ? 'text-blue-500' : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-200'} ${isExpanded ? 'mr-3' : ''}`} style={{ fontSize: '1.5rem' }} />
+        <Icon className={`w-6 h-6 flex-shrink-0 ${active ? 'text-blue-600 dark:text-blue-500' : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-200'} ${isExpanded ? 'mr-3' : ''}`} style={{ fontSize: '1.5rem' }} />
         {isExpanded && (
           <div className="flex flex-col min-w-0 overflow-hidden">
             <span className="truncate leading-tight">{label}</span>
-            {subLabel && <span className={`text-xs font-normal truncate mt-0.5 ${active ? 'text-blue-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300'}`}>{subLabel}</span>}
+            {subLabel && <span className={`text-xs font-normal truncate mt-0.5 ${active ? 'text-blue-500 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300'}`}>{subLabel}</span>}
           </div>
         )}
       </Link>
@@ -121,10 +121,16 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
   }
 
   return (
-    <aside className={`${!isExpanded ? 'w-20' : 'w-64'} bg-white dark:bg-[#0d1117] border-r border-gray-200 dark:border-[#30363d] flex flex-col h-full overflow-y-auto flex-shrink-0 transition-all duration-300 ease-in-out`}>
+    <aside 
+      className={`${!isExpanded ? 'w-20' : 'w-64'} border-r border-gray-200 dark:border-[#30363d] flex flex-col h-full overflow-y-auto flex-shrink-0 transition-all duration-300 ease-in-out`}
+      style={{ backgroundColor: isDark ? '#0d1117' : '#ffffff' }}
+    >
 
       {/* Header */}
-      <div className={`h-16 flex items-center px-4 border-b border-gray-100 dark:border-[#30363d] ${!isExpanded ? 'justify-center' : 'justify-between'}`}>
+      <div 
+        className={`h-16 flex items-center px-4 border-b border-gray-100 dark:border-[#30363d] ${!isExpanded ? 'justify-center' : 'justify-between'}`}
+        style={{ backgroundColor: isDark ? '#0d1117' : '#ffffff' }}
+      >
         <div className={`flex items-center gap-3 overflow-hidden transition-all duration-300 ${!isExpanded ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>
            <img src="/logo.svg" alt="Logo" className="h-10 w-10 flex-shrink-0 object-contain" />
            <span className="font-bold text-lg text-gray-800 dark:text-[#e6edf3] tracking-tight">Ortelius</span>
@@ -161,7 +167,7 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
         </div>
       </div>
 
-      <nav className="flex-1 py-4 space-y-1">
+      <nav className="flex-1 py-4 space-y-1" style={{ backgroundColor: isDark ? '#0d1117' : '#ffffff' }}>
         <NavItem label="Dashboard" icon={DashboardIcon} path="/" />
         <NavItem label="Synced Endpoints" subLabel="(Where It's Running)" icon={HubIcon} path="/endpoints" />
         <NavItem label="Project Releases" subLabel="(Where to Fix It)" icon={Inventory2Icon} path="/releases" />
@@ -193,7 +199,10 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
 
       {/* Filters Section */}
       {showFilters && isExpanded && (
-        <div className="border-t border-gray-200 dark:border-[#30363d] p-4 animate-fadeIn">
+        <div 
+          className="border-t border-gray-200 dark:border-[#30363d] p-4 animate-fadeIn" 
+          style={{ backgroundColor: isDark ? '#0d1117' : '#ffffff' }}
+        >
           <div className="flex items-center justify-between mb-4">
             <button
               onClick={() => setIsFiltersOpen(!isFiltersOpen)}

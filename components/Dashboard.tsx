@@ -44,14 +44,15 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime'
 import RouterIcon from '@mui/icons-material/Router'
 import TimerIcon from '@mui/icons-material/Timer'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import DownloadIcon from '@mui/icons-material/Download'
 
 // --- Constants ---
 const COLORS = {
-  CRITICAL: '#dc2626', // Red
-  HIGH: '#f97316',     // Orange
-  MEDIUM: '#eab308',   // Yellow
-  LOW: '#3b82f6',      // Blue
-  NONE: '#9ca3af'      // Gray
+  CRITICAL: '#dc2626',
+  HIGH: '#f97316',
+  MEDIUM: '#eab308',
+  LOW: '#3b82f6',
+  NONE: '#9ca3af'
 }
 
 const PIE_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
@@ -111,8 +112,9 @@ export default function Dashboard() {
   const [loadingGlobalStatus, setLoadingGlobalStatus] = useState(true)
   
   const [error, setError] = useState<string | null>(null)
+  const [exportingPDF, setExportingPDF] = useState(false)
+  const [isSelectingElement, setIsSelectingElement] = useState(false)
 
-  // 1. Fetch MTTR & Core Metrics
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
@@ -132,7 +134,6 @@ export default function Dashboard() {
     fetchMetrics()
   }, [])
 
-  // 2. Fetch Global Status
   useEffect(() => {
     const fetchGlobalStatus = async () => {
       try {
@@ -150,7 +151,6 @@ export default function Dashboard() {
     fetchGlobalStatus()
   }, [])
 
-  // 3. Fetch Trend Data
   useEffect(() => {
     const fetchTrend = async () => {
       try {
@@ -181,6 +181,92 @@ export default function Dashboard() {
     }
     fetchTrend()
   }, [])
+
+  const exportToSVG = async (element: HTMLElement) => {
+    setExportingPDF(true)
+    
+    // Create temporary style tag to hide rings during export
+    const tempStyle = document.createElement('style')
+    tempStyle.id = 'temp-export-style'
+    tempStyle.textContent = `
+      .ring-2, .ring-4, .ring-offset-4,
+      [class*="ring-"] {
+        box-shadow: none !important;
+        outline: none !important;
+      }
+    `
+    document.head.appendChild(tempStyle)
+    
+    // Wait for styles to apply and browser to repaint
+    await new Promise(resolve => setTimeout(resolve, 800))
+    
+    try {
+      const domtoimage = (await import('dom-to-image')).default
+      
+      const svgDataUrl = await domtoimage.toSvg(element, {
+        quality: 1,
+        bgcolor: '#ffffff',
+        style: {
+          transform: 'scale(1)',
+          transformOrigin: 'top left',
+          fontFamily: 'system-ui, -apple-system, sans-serif'
+        },
+        cacheBust: true,
+        imagePlaceholder: undefined,
+        filter: (node: any) => {
+          return node.tagName !== 'SCRIPT' && node.tagName !== 'NOSCRIPT'
+        }
+      })
+      
+      const response = await fetch(svgDataUrl)
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      
+      const link = document.createElement('a')
+      link.download = `ortelius-dashboard-${new Date().toISOString().split('T')[0]}.svg`
+      link.href = url
+      link.click()
+      
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error('Error exporting SVG:', err)
+      alert('Failed to export SVG')
+    } finally {
+      // Remove temporary style
+      const styleEl = document.getElementById('temp-export-style')
+      if (styleEl) styleEl.remove()
+      
+      setExportingPDF(false)
+      setIsSelectingElement(false)
+    }
+  }
+
+  const startElementSelection = () => {
+    setIsSelectingElement(true)
+  }
+
+  const handleElementClick = (e: React.MouseEvent) => {
+    if (!isSelectingElement) return
+    
+    e.preventDefault()
+    e.stopPropagation()
+    
+    const target = e.currentTarget as HTMLElement
+    exportToSVG(target)
+  }
+
+  useEffect(() => {
+    const handleEscapeKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isSelectingElement) {
+        setIsSelectingElement(false)
+      }
+    }
+
+    if (isSelectingElement) {
+      document.addEventListener('keydown', handleEscapeKey)
+      return () => document.removeEventListener('keydown', handleEscapeKey)
+    }
+  }, [isSelectingElement])
 
   const formatDate = (dateStr: string) => {
     try {
@@ -213,11 +299,9 @@ export default function Dashboard() {
     </div>
   )
 
-  // Loading skeleton with fixed layout
   if (loadingMttr || loadingGlobalStatus) {
     return (
       <div className="flex-1 p-6 bg-gray-50 min-h-screen space-y-8 font-sans overflow-y-auto">
-        {/* Header Skeleton */}
         <div className="flex justify-between items-end">
           <div className="flex-1">
             <Skeleton width="60%" height={32} />
@@ -228,13 +312,9 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
-
-        {/* Executive Summary Cards Skeleton */}
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {[1, 2, 3, 4, 5].map(i => <SkeletonCard key={i} />)}
         </div>
-
-        {/* Main Content Skeleton */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             <SkeletonTable />
@@ -243,8 +323,6 @@ export default function Dashboard() {
             <SkeletonChart height="400px" />
           </div>
         </div>
-
-        {/* Trend Section Skeleton */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             <SkeletonChart height="500px" />
@@ -280,7 +358,27 @@ export default function Dashboard() {
     <div className="flex h-full relative">
       <div className="flex-1 p-6 bg-gray-50 min-h-screen space-y-8 font-sans overflow-y-auto">
         
-        {/* Header */}
+        {/* Selection Mode Banner */}
+        {isSelectingElement && (
+          <div className="fixed top-0 left-0 right-0 z-50 bg-blue-600 text-white px-6 py-3 shadow-lg">
+            <div className="max-w-7xl mx-auto flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <DownloadIcon sx={{ fontSize: 24 }} />
+                <div>
+                  <p className="font-semibold">Select an element to export as SVG</p>
+                  <p className="text-sm text-blue-100">Hover over sections and click to capture</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsSelectingElement(false)}
+                className="px-4 py-2 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition-colors font-medium"
+              >
+                Cancel (ESC)
+              </button>
+            </div>
+          </div>
+        )}
+        
         <div className="flex justify-between items-end">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Post-Deployment OSS Vulnerability Dashboard</h1>
@@ -288,7 +386,6 @@ export default function Dashboard() {
               <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs font-semibold border border-blue-200">Rolling 180 Days</span>
               <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded text-xs font-semibold border border-green-200">Endpoint Focused</span>
               
-              {/* SLA Criteria Badge with Popover */}
               <div className="relative group">
                 <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded text-xs font-semibold border border-purple-200 cursor-help flex items-center gap-1">
                   <span>SLA Policy</span>
@@ -296,7 +393,6 @@ export default function Dashboard() {
                   <span className="font-normal opacity-80">Crit 15d • High 30d</span>
                 </span>
                 
-                {/* Popover */}
                 <div className="absolute left-0 top-full mt-2 w-72 bg-white border border-gray-200 shadow-xl rounded-lg p-4 z-50 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-200">
                   <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
                     <ScheduleIcon fontSize="small" className="text-purple-600" />
@@ -335,10 +431,23 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
+          
+          <button
+            onClick={startElementSelection}
+            disabled={exportingPDF}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <DownloadIcon sx={{ fontSize: 20 }} />
+            {exportingPDF ? 'Exporting...' : isSelectingElement ? 'Click element to export...' : 'Save as SVG'}
+          </button>
         </div>
 
-        {/* --- Section G: Executive Summary Block --- */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        <div 
+          onClick={handleElementClick}
+          className={`grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 ${
+            isSelectingElement ? 'cursor-pointer ring-2 ring-blue-400 ring-offset-4 rounded-lg hover:ring-blue-600 transition-all p-4 -m-4' : ''
+          }`}
+        >
           <ExecutiveCard 
             title="Total New CVEs" 
             value={executive_summary.total_new_cves}
@@ -413,8 +522,13 @@ export default function Dashboard() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
-          {/* --- Section A & B & C: Detailed Metrics Table --- */}
-          <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col" style={{ minHeight: '400px' }}>
+          <div 
+            onClick={handleElementClick}
+            className={`lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col ${
+              isSelectingElement ? 'cursor-pointer ring-2 ring-blue-400 hover:ring-blue-600 transition-all' : ''
+            }`} 
+            style={{ minHeight: '400px' }}
+          >
             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
               <div className="flex justify-between items-center">
                 <h2 className="text-lg font-bold text-gray-900">Severity Breakdown & SLA Compliance</h2>
@@ -478,8 +592,13 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* --- Section D: Volume & Flow (Backlog Delta) --- */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex flex-col" style={{ minHeight: '400px' }}>
+          <div 
+            onClick={handleElementClick}
+            className={`bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex flex-col ${
+              isSelectingElement ? 'cursor-pointer ring-2 ring-blue-400 hover:ring-blue-600 transition-all' : ''
+            }`} 
+            style={{ minHeight: '400px' }}
+          >
             <div className="flex justify-between items-start mb-4">
               <h2 className="text-lg font-bold text-gray-900">Volume & Flow</h2>
               <span className="text-xs text-gray-400">
@@ -520,8 +639,13 @@ export default function Dashboard() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
-          {/* --- Section F: Trend Chart --- */}
-          <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex flex-col" style={{ minHeight: '500px' }}>
+          <div 
+            onClick={handleElementClick}
+            className={`lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex flex-col ${
+              isSelectingElement ? 'cursor-pointer ring-2 ring-blue-400 hover:ring-blue-600 transition-all' : ''
+            }`} 
+            style={{ minHeight: '500px' }}
+          >
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-lg font-bold text-gray-900">Vulnerability Trend (180 Days)</h2>
               <span className="text-xs text-gray-400">
@@ -564,8 +688,13 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* --- Section E: Security Velocity & Impact Metrics --- */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex flex-col" style={{ minHeight: '500px' }}>
+          <div 
+            onClick={handleElementClick}
+            className={`bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex flex-col ${
+              isSelectingElement ? 'cursor-pointer ring-2 ring-blue-400 hover:ring-blue-600 transition-all' : ''
+            }`} 
+            style={{ minHeight: '500px' }}
+          >
             <div className="mb-4 flex justify-between items-start">
               <div>
                 <h2 className="text-lg font-bold text-gray-900">Security Velocity & Impact Metrics</h2>
@@ -576,7 +705,6 @@ export default function Dashboard() {
 
             <div className="grid grid-cols-2 gap-4 flex-1">
               
-              {/* Top Left: Remediation Velocity */}
               <ExecutiveCard
                 title="Fix Velocity"
                 value={(by_severity.reduce((acc, s) => acc + (s.remediated || 0), 0) / 26).toFixed(1)}
@@ -598,7 +726,6 @@ export default function Dashboard() {
                 }
               />
 
-              {/* Top Right: Critical/High Backlog - UPDATED */}
               <ExecutiveCard
                 title="High-Risk Backlog"
                 value={globalStatus?.high_risk_backlog ?? 
@@ -631,7 +758,6 @@ export default function Dashboard() {
                 }
               />
 
-              {/* Bottom Left: Pre-Deploy Detection Rate */}
               <ExecutiveCard
                 title="Shift-Left Success"
                 value={executive_summary.total_new_cves > 0 
@@ -655,7 +781,6 @@ export default function Dashboard() {
                 }
               />
 
-              {/* Bottom Right: SLA Burn Rate */}
               <ExecutiveCard
                 title="SLA Burn Rate"
                 value={(() => {
@@ -696,7 +821,6 @@ export default function Dashboard() {
               />
             </div>
 
-            {/* Bottom Summary Bar - Exposure & Debt */}
             <div className="mt-6 pt-6 border-t border-gray-200">
               <div className="grid grid-cols-3 gap-6 text-center">
                 <div className="flex flex-col">
@@ -733,7 +857,6 @@ export default function Dashboard() {
 
         </div>
 
-        {/* --- Compliance Framework Documentation --- */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8 mt-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-4 border-b border-gray-200">
             📋 Compliance Framework Documentation
@@ -741,7 +864,6 @@ export default function Dashboard() {
           
           <div className="space-y-8">
             
-            {/* NIST SP 800-53 Section */}
             <div id="nist-800-53">
               <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
                 <span className="px-3 py-1 bg-indigo-100 text-indigo-800 rounded text-sm font-semibold">NIST SP 800-53 Rev. 5</span>
@@ -787,7 +909,6 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* NIST SP 800-137 Section */}
             <div id="nist-800-137" className="pt-6 border-t border-gray-200">
               <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
                 <span className="px-3 py-1 bg-teal-100 text-teal-800 rounded text-sm font-semibold">NIST SP 800-137</span>
@@ -844,7 +965,6 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* NIST SP 800-190 Section */}
             <div id="nist-800-190" className="pt-6 border-t border-gray-200">
               <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
                 <span className="px-3 py-1 bg-cyan-100 text-cyan-800 rounded text-sm font-semibold">NIST SP 800-190</span>
@@ -908,7 +1028,6 @@ export default function Dashboard() {
               </div>
             </div>
             
-            {/* NIST SP 800-218 Section */}
             <div id="nist-800-218" className="pt-6 border-t border-gray-200">
               <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
                 <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded text-sm font-semibold">NIST SP 800-218</span>
@@ -996,7 +1115,6 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Additional Context */}
             <div className="pt-6 border-t border-gray-200">
               <h3 className="text-lg font-bold text-gray-800 mb-3">Additional Compliance Context</h3>
               <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500">
