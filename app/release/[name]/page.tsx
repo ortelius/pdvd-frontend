@@ -118,7 +118,6 @@ export default function ReleaseVersionDetailPage() {
     if (newFilters.searchCVE !== undefined) setSearchCVE(newFilters.searchCVE)
   }
 
-  // --- UPDATED: Added w-full to ensure container fills layout width ---
   const renderLayout = (content: React.ReactNode) => (
     <div className="flex h-screen overflow-hidden bg-white w-full">
       <Sidebar 
@@ -239,7 +238,6 @@ export default function ReleaseVersionDetailPage() {
   const dependencyCount = release.dependency_count ?? 0
 
   return (
-    // --- UPDATED: Added w-full to ensure container fills layout width ---
     <div className="flex h-screen overflow-hidden bg-white w-full">
       <Sidebar 
         filters={{
@@ -272,8 +270,8 @@ export default function ReleaseVersionDetailPage() {
               </h1>
           </div>
 
-          {/* SUMMARY GRID */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 text-center bg-gray-50 p-4 rounded-lg border border-gray-200">
+          {/* SUMMARY GRID - ADDED export-card */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 text-center bg-white p-4 rounded-lg border border-gray-200 shadow-sm export-card">
             <div>
               <p className="text-xs text-gray-600 flex justify-center items-center gap-1">
                 <ThreatIntelligence size={16} color="rgb(185, 28, 28)" />
@@ -309,13 +307,13 @@ export default function ReleaseVersionDetailPage() {
             )}
           </div>
 
-          {/* SYNCED ENDPOINTS SECTION */}
-          <section className="mt-6 p-4 border rounded-lg bg-gray-50">
+          {/* SYNCED ENDPOINTS SECTION - ADDED export-card */}
+          <section className="mt-6 p-4 border rounded-lg bg-white shadow-sm export-card">
             <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
               <LinkIcon sx={{ width: 20, height: 20, color: 'rgb(37, 99, 235)' }} /> 
               Synced Endpoints ({syncedEndpointsList.length})
             </h3>
-            <div className="overflow-x-auto border rounded-lg">
+            <div className="overflow-x-auto border rounded-lg bg-white">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-100">
                   <tr>
@@ -361,8 +359,8 @@ export default function ReleaseVersionDetailPage() {
             </div>
           </section>
 
-          {/* VULNERABILITY TABLE */}
-          <div className="overflow-auto border rounded-lg max-h-96"> 
+          {/* VULNERABILITY TABLE - ADDED export-card */}
+          <div className="overflow-auto border rounded-lg max-h-96 bg-white export-card"> 
             {combinedData.length > 0 ? (
               <table className="w-full table-auto min-w-[700px]">
                 <thead className="bg-gray-100 sticky top-0 z-10">
@@ -434,8 +432,8 @@ export default function ReleaseVersionDetailPage() {
             )}
           </div>
 
-          {/* SOURCE & BUILD SECTION */}
-          <section className="mt-6 p-4 border rounded-lg bg-gray-50">
+          {/* SOURCE & BUILD SECTION - ADDED export-card */}
+          <section className="mt-6 p-4 border rounded-lg bg-white shadow-sm export-card">
             <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
                 <BuildIcon sx={{ width: 20, height: 20, color: 'rgb(100, 116, 139)' }} />
                 Source & Build Details
@@ -508,8 +506,8 @@ export default function ReleaseVersionDetailPage() {
             </div>
           </section>
 
-          {/* OPENSSF SCORECARD SECTION */}
-          <section className="mt-6 p-4 border rounded-lg bg-gray-50">
+          {/* OPENSSF SCORECARD SECTION - ADDED export-card */}
+          <section className="mt-6 p-4 border rounded-lg bg-white shadow-sm export-card">
             <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
               <SecurityIcon sx={{ width: 20, height: 20, color: 'rgb(22, 163, 74)' }} />
               OpenSSF Scorecard

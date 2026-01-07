@@ -197,7 +197,7 @@ export default function EndpointDetailPage() {
     endpoint.total_vulnerabilities.low
 
   return (
-    <>
+    <div className="flex h-screen overflow-hidden bg-white w-full">
       <Sidebar 
         filters={{
           vulnerabilityScore: filters.selectedSeverities,
@@ -284,7 +284,9 @@ export default function EndpointDetailPage() {
         </div>
         
         <h3 className="text-lg font-semibold mt-6 mb-3 flex items-center gap-2">Release Versions ({endpoint.releases?.length || 0})</h3>
-        <div className="overflow-auto border rounded-lg max-h-96">
+        
+        {/* ADDED bg-white HERE */}
+        <div className="overflow-auto border rounded-lg max-h-96 bg-white">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-100 sticky top-0 z-10">
               <tr>
@@ -311,7 +313,8 @@ export default function EndpointDetailPage() {
           </table>
         </div>
 
-        <div className="overflow-auto border rounded-lg max-h-96 mt-6">
+        {/* ADDED bg-white HERE */}
+        <div className="overflow-auto border rounded-lg max-h-96 mt-6 bg-white">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-100 sticky top-0 z-10">
               <tr>
@@ -365,6 +368,6 @@ export default function EndpointDetailPage() {
           </table>
         </div>
       </div>
-    </>
+    </div>
   )
 }

@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { useSidebar } from '@/context/SidebarContext'
 import { useTheme } from '@/context/ThemeContext'
 import { useAuth } from '@/context/AuthContext'
+import { useExport } from '@/context/ExportContext' 
 import AuthProfile from '@/components/AuthProfile'
 
 // Material UI Icons
@@ -21,6 +22,7 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts'
 import LightModeIcon from '@mui/icons-material/LightMode'
 import DarkModeIcon from '@mui/icons-material/DarkMode'
+import DownloadIcon from '@mui/icons-material/Download'
 
 // Local SVG Icons
 import { ThreatIntelligence } from '@/components/icons'
@@ -45,12 +47,32 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
   const { isExpanded, toggleSidebar } = useSidebar()
   const { isDark, toggleTheme } = useTheme()
   const { hasRole } = useAuth()
+  const { toggleExportMode } = useExport()
   const [isFiltersOpen, setIsFiltersOpen] = useState(true)
 
   const isActive = (path: string) => {
     if (path === '/' && pathname !== '/') return false
     return pathname === path
   }
+
+  // --- Dynamic Styles based on isDark state to ensure sync ---
+  const inputClasses = `w-full px-2 py-1.5 text-xs border rounded-md focus:outline-none focus:ring-1 ${
+    isDark 
+      ? 'bg-[#0d1117] border-[#30363d] text-[#e6edf3] focus:ring-[#58a6ff] placeholder-gray-600' 
+      : 'bg-white border-gray-300 text-gray-900 focus:ring-blue-500 placeholder-gray-400'
+  }`
+
+  const buttonClasses = `w-full flex items-center justify-center gap-2 ${!isExpanded ? 'p-2' : 'px-3 py-2'} text-sm font-medium rounded-md transition-colors border border-transparent ${
+    isDark 
+      ? 'text-gray-300 bg-[#21262d] hover:bg-[#30363d] hover:text-white border-[#30363d]' 
+      : 'text-gray-700 bg-gray-100 hover:bg-gray-200 hover:text-gray-900'
+  }`
+
+  const checkboxClasses = `w-3.5 h-3.5 border rounded focus:ring-blue-500 ${
+    isDark
+      ? 'bg-[#0d1117] border-[#30363d] text-[#58a6ff] checked:bg-[#58a6ff] checked:border-[#58a6ff]'
+      : 'bg-white border-gray-300 text-blue-600 checked:bg-blue-600 checked:border-blue-600'
+  }`
 
   const NavItem = ({ label, subLabel, icon: Icon, path }: any) => {
     const active = isActive(path)
@@ -122,18 +144,18 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
 
   return (
     <aside 
-      className={`${!isExpanded ? 'w-20' : 'w-64'} border-r border-gray-200 dark:border-[#30363d] flex flex-col h-full overflow-y-auto flex-shrink-0 transition-all duration-300 ease-in-out`}
+      className={`${!isExpanded ? 'w-20' : 'w-64'} border-r border-gray-200 flex flex-col h-full overflow-y-auto flex-shrink-0 transition-all duration-300 ease-in-out`}
       style={{ backgroundColor: isDark ? '#0d1117' : '#ffffff' }}
     >
 
       {/* Header */}
       <div 
-        className={`h-16 flex items-center px-4 border-b border-gray-100 dark:border-[#30363d] ${!isExpanded ? 'justify-center' : 'justify-between'}`}
+        className={`h-16 flex items-center px-4 border-b border-gray-100 ${!isExpanded ? 'justify-center' : 'justify-between'}`}
         style={{ backgroundColor: isDark ? '#0d1117' : '#ffffff' }}
       >
         <div className={`flex items-center gap-3 overflow-hidden transition-all duration-300 ${!isExpanded ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>
            <img src="/logo.svg" alt="Logo" className="h-10 w-10 flex-shrink-0 object-contain" />
-           <span className="font-bold text-lg text-gray-800 dark:text-[#e6edf3] tracking-tight">Ortelius</span>
+           <span className={`font-bold text-lg tracking-tight ${isDark ? 'text-[#e6edf3]' : 'text-black'}`}>Ortelius</span>
         </div>
 
         <div className="flex items-center gap-1">
@@ -176,7 +198,7 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
 
         {hasRole(['admin']) && (
           <>
-            <div className="my-4 border-t border-gray-200 dark:border-[#30363d]" />
+            <div className="my-4 border-t border-gray-200" />
             <div className={!isExpanded ? "hidden" : "px-4 mb-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider"}>
               Administration
             </div>
@@ -200,7 +222,7 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
       {/* Filters Section */}
       {showFilters && isExpanded && (
         <div 
-          className="border-t border-gray-200 dark:border-[#30363d] p-4 animate-fadeIn" 
+          className="border-t border-gray-200 p-4 animate-fadeIn" 
           style={{ backgroundColor: isDark ? '#0d1117' : '#ffffff' }}
         >
           <div className="flex items-center justify-between mb-4">
@@ -232,7 +254,7 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
                     value={filters.name}
                     onChange={(e) => setFilters && setFilters((prev: any) => ({ ...prev, name: e.target.value }))}
                     placeholder="Filter by name..."
-                    className="w-full px-2 py-1.5 text-xs border border-gray-300 dark:border-[#30363d] rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 dark:focus:ring-[#58a6ff] bg-white dark:bg-[#0d1117] text-gray-900 dark:text-[#e6edf3]"
+                    className={inputClasses}
                   />
                 </div>
               )}
@@ -247,7 +269,7 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
                             type="checkbox"
                             checked={filters.status?.includes(status) || false}
                             onChange={() => handleCheckboxChange('status', status)}
-                            className="w-3.5 h-3.5 text-blue-600 dark:text-[#58a6ff] border-gray-300 dark:border-[#30363d] rounded focus:ring-blue-500 dark:focus:ring-[#58a6ff]"
+                            className={checkboxClasses}
                           />
                           <span className="ml-2 text-xs text-gray-700 dark:text-[#c9d1d9] group-hover:text-gray-900 dark:group-hover:text-[#e6edf3] capitalize">{status}</span>
                         </label>
@@ -267,7 +289,7 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
                           type="checkbox"
                           checked={filters.vulnerabilityScore?.includes(severity) || false}
                           onChange={() => handleCheckboxChange('vulnerabilityScore', severity)}
-                          className="w-3.5 h-3.5 text-blue-600 dark:text-[#58a6ff] border-gray-300 dark:border-[#30363d] rounded focus:ring-blue-500 dark:focus:ring-[#58a6ff]"
+                          className={checkboxClasses}
                         />
                         <span className="ml-2 text-xs text-gray-700 dark:text-[#c9d1d9] group-hover:text-gray-900 dark:group-hover:text-[#e6edf3] capitalize">{severity}</span>
                       </label>
@@ -285,7 +307,7 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
                         type="checkbox"
                         checked={filters.openssfScore?.includes('high') || false}
                         onChange={() => handleCheckboxChange('openssfScore', 'high')}
-                        className="w-3.5 h-3.5 text-blue-600 dark:text-[#58a6ff] border-gray-300 dark:border-[#30363d] rounded focus:ring-blue-500 dark:focus:ring-[#58a6ff]"
+                        className={checkboxClasses}
                       />
                       <span className="ml-2 text-xs text-gray-700 dark:text-[#c9d1d9] group-hover:text-gray-900 dark:group-hover:text-[#e6edf3]">High (8.0+)</span>
                     </label>
@@ -294,7 +316,7 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
                         type="checkbox"
                         checked={filters.openssfScore?.includes('medium') || false}
                         onChange={() => handleCheckboxChange('openssfScore', 'medium')}
-                        className="w-3.5 h-3.5 text-blue-600 dark:text-[#58a6ff] border-gray-300 dark:border-[#30363d] rounded focus:ring-blue-500 dark:focus:ring-[#58a6ff]"
+                        className={checkboxClasses}
                       />
                       <span className="ml-2 text-xs text-gray-700 dark:text-[#c9d1d9] group-hover:text-gray-900 dark:group-hover:text-[#e6edf3]">Medium (6.0-7.9)</span>
                     </label>
@@ -303,7 +325,7 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
                         type="checkbox"
                         checked={filters.openssfScore?.includes('low') || false}
                         onChange={() => handleCheckboxChange('openssfScore', 'low')}
-                        className="w-3.5 h-3.5 text-blue-600 dark:text-[#58a6ff] border-gray-300 dark:border-[#30363d] rounded focus:ring-blue-500 dark:focus:ring-[#58a6ff]"
+                        className={checkboxClasses}
                       />
                       <span className="ml-2 text-xs text-gray-700 dark:text-[#c9d1d9] group-hover:text-gray-900 dark:group-hover:text-[#e6edf3]">Low (&lt;6.0)</span>
                     </label>
@@ -320,7 +342,7 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
                       value={filters.packageFilter || ''}
                       onChange={(e) => setFilters && setFilters((prev: any) => ({ ...prev, packageFilter: e.target.value }))}
                       placeholder="Filter by package..."
-                      className="w-full px-2 py-1.5 text-xs border border-gray-300 dark:border-[#30363d] rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 dark:focus:ring-[#58a6ff] bg-white dark:bg-[#0d1117] text-gray-900 dark:text-[#e6edf3]"
+                      className={inputClasses}
                     />
                   </div>
                   <div>
@@ -330,7 +352,7 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
                       value={filters.searchCVE || ''}
                       onChange={(e) => setFilters && setFilters((prev: any) => ({ ...prev, searchCVE: e.target.value }))}
                       placeholder="Filter by CVE ID..."
-                      className="w-full px-2 py-1.5 text-xs border border-gray-300 dark:border-[#30363d] rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 dark:focus:ring-[#58a6ff] bg-white dark:bg-[#0d1117] text-gray-900 dark:text-[#e6edf3]"
+                      className={inputClasses}
                     />
                   </div>
                 </>
@@ -342,6 +364,21 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
 
       {/* Auth Slot */}
       <AuthProfile isExpanded={isExpanded} />
+
+      {/* Save as SVG Button (Persistent Footer under Auth) */}
+      <div 
+        className="p-4 border-t border-gray-200"
+        style={{ backgroundColor: isDark ? '#0d1117' : '#ffffff' }}
+      >
+        <button
+          onClick={toggleExportMode}
+          className={buttonClasses}
+          title={!isExpanded ? "Save as SVG" : ''}
+        >
+          <DownloadIcon sx={{ fontSize: 20 }} className={isDark ? "text-gray-400" : "text-gray-500"} />
+          {isExpanded && <span>Save as SVG</span>}
+        </button>
+      </div>
 
     </aside>
   )
