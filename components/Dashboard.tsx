@@ -203,34 +203,59 @@ export default function Dashboard() {
     try {
       const domtoimage = (await import('dom-to-image')).default
       
-      const svgDataUrl = await domtoimage.toSvg(element, {
+      // Get original dimensions
+      const rect = element.getBoundingClientRect()
+      const originalWidth = rect.width
+      const originalHeight = rect.height
+      
+      // Export at 4x resolution
+      const dataUrl = await domtoimage.toPng(element, {
         quality: 1,
         bgcolor: '#ffffff',
+        width: originalWidth * 4,
+        height: originalHeight * 4,
         style: {
-          transform: 'scale(1)',
-          transformOrigin: 'top left',
-          fontFamily: 'system-ui, -apple-system, sans-serif'
+          transform: 'scale(4)',
+          transformOrigin: 'top left'
         },
         cacheBust: true,
-        imagePlaceholder: undefined,
         filter: (node: any) => {
           return node.tagName !== 'SCRIPT' && node.tagName !== 'NOSCRIPT'
         }
       })
       
-      const response = await fetch(svgDataUrl)
-      const blob = await response.blob()
-      const url = URL.createObjectURL(blob)
+      // Convert to WebP
+      const img = new Image()
+      img.src = dataUrl
       
-      const link = document.createElement('a')
-      link.download = `ortelius-dashboard-${new Date().toISOString().split('T')[0]}.svg`
-      link.href = url
-      link.click()
+      await new Promise((resolve, reject) => {
+        img.onload = resolve
+        img.onerror = reject
+      })
       
-      URL.revokeObjectURL(url)
+      const canvas = document.createElement('canvas')
+      canvas.width = originalWidth * 4
+      canvas.height = originalHeight * 4
+      const ctx = canvas.getContext('2d')
+      
+      if (ctx) {
+        ctx.drawImage(img, 0, 0)
+        
+        // Convert to WebP with high quality
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const url = URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.download = `ortelius-dashboard-${new Date().toISOString().split('T')[0]}.webp`
+            link.href = url
+            link.click()
+            URL.revokeObjectURL(url)
+          }
+        }, 'image/webp', 0.95)
+      }
     } catch (err) {
-      console.error('Error exporting SVG:', err)
-      alert('Failed to export SVG')
+      console.error('Error exporting WebP:', err)
+      alert('Failed to export WebP')
     } finally {
       // Remove temporary style
       const styleEl = document.getElementById('temp-export-style')
@@ -365,7 +390,7 @@ export default function Dashboard() {
               <div className="flex items-center gap-3">
                 <DownloadIcon sx={{ fontSize: 24 }} />
                 <div>
-                  <p className="font-semibold">Select an element to export as SVG</p>
+                  <p className="font-semibold">Select an element to export as WebP (4x resolution)</p>
                   <p className="text-sm text-blue-100">Hover over sections and click to capture</p>
                 </div>
               </div>
@@ -438,7 +463,7 @@ export default function Dashboard() {
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <DownloadIcon sx={{ fontSize: 20 }} />
-            {exportingPDF ? 'Exporting...' : isSelectingElement ? 'Click element to export...' : 'Save as SVG'}
+            {exportingPDF ? 'Exporting...' : isSelectingElement ? 'Click element to export...' : 'Save as WebP (4x)'}
           </button>
         </div>
 
