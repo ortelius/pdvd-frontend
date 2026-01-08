@@ -3,8 +3,10 @@ import type { Metadata } from 'next'
 import { SidebarProvider } from '@/context/SidebarContext' 
 import { ThemeProvider } from '@/context/ThemeContext'
 import { ExportProvider } from '@/context/ExportContext'
+import { OrgProvider } from '@/context/OrgContext'
 import AuthWrapper from '@/components/AuthWrapper' 
 import ExportManager from '@/components/ExportManager'
+import TopNavigation from '@/components/TopNavigation'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -30,16 +32,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://app.ortelius.io" />
         <link rel="dns-prefetch" href="https://app.ortelius.io" />
       </head>
-      <body>
+      <body className="overflow-hidden">
         <ThemeProvider>
           <AuthWrapper>
             <ExportProvider>
-              <SidebarProvider>
-                <div className="flex min-h-screen">
-                  <ExportManager />
-                  {children}
-                </div>
-              </SidebarProvider>
+              <OrgProvider>
+                <SidebarProvider>
+                  <div className="flex flex-col h-screen">
+                    <TopNavigation />
+                    <div className="flex flex-1 overflow-hidden">
+                      <ExportManager />
+                      {children}
+                    </div>
+                  </div>
+                </SidebarProvider>
+              </OrgProvider>
             </ExportProvider>
           </AuthWrapper>
         </ThemeProvider>

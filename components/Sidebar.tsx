@@ -1,32 +1,23 @@
 'use client'
 
 import React, { useState } from 'react'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 import { useSidebar } from '@/context/SidebarContext'
 import { useTheme } from '@/context/ThemeContext'
 import { useAuth } from '@/context/AuthContext'
 import { useExport } from '@/context/ExportContext' 
 import AuthProfile from '@/components/AuthProfile'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
 // Material UI Icons
-import DashboardIcon from '@mui/icons-material/Dashboard'
-import AccountTreeIcon from '@mui/icons-material/AccountTree'
-import HubIcon from '@mui/icons-material/Hub'
-import Inventory2Icon from '@mui/icons-material/Inventory2'
-import BuildIcon from '@mui/icons-material/Build'
 import SettingsIcon from '@mui/icons-material/Settings'
-import MenuIcon from '@mui/icons-material/Menu'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
+import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts'
-import LightModeIcon from '@mui/icons-material/LightMode'
-import DarkModeIcon from '@mui/icons-material/DarkMode'
 import DownloadIcon from '@mui/icons-material/Download'
-
-// Local SVG Icons
-import { ThreatIntelligence } from '@/components/icons'
+import AccountTreeIcon from '@mui/icons-material/AccountTree'
 
 interface SidebarProps {
   filters?: {
@@ -46,7 +37,7 @@ interface SidebarProps {
 export default function Sidebar({ filters, setFilters, selectedCategory }: SidebarProps) {
   const pathname = usePathname()
   const { isExpanded, toggleSidebar } = useSidebar()
-  const { isDark, toggleTheme } = useTheme()
+  const { isDark } = useTheme()
   const { hasRole } = useAuth()
   const { toggleExportMode } = useExport()
   const [isFiltersOpen, setIsFiltersOpen] = useState(true)
@@ -56,7 +47,6 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
     return pathname === path
   }
 
-  // --- Dynamic Styles ---
   const inputClasses = `w-full px-2 py-1.5 text-xs border rounded-md focus:outline-none focus:ring-1 ${
     isDark 
       ? 'bg-[#0d1117] border-[#30363d] text-[#e6edf3] focus:ring-[#58a6ff] placeholder-gray-600' 
@@ -99,7 +89,6 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
     )
   }
 
-  // --- Filter Logic ---
   const isDetailView = selectedCategory === 'endpoint-detail' || selectedCategory === 'release-detail'
   const showNameFilter = !isDetailView
   const showStatusFilters = selectedCategory === 'image'
@@ -146,86 +135,60 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
 
   return (
     <aside 
-      className={`${!isExpanded ? 'w-20' : 'w-64'} border-r border-gray-200 flex flex-col h-full overflow-y-auto flex-shrink-0 transition-all duration-300 ease-in-out`}
+      className={`${!isExpanded ? 'w-20' : 'w-64'} border-r border-gray-200 dark:border-[#30363d] flex flex-col h-full overflow-y-auto flex-shrink-0 transition-all duration-300 ease-in-out`}
       style={{ backgroundColor: isDark ? '#0d1117' : '#ffffff' }}
     >
 
       {/* Header */}
       <div 
-        className={`h-16 flex items-center px-4 border-b border-gray-100 ${!isExpanded ? 'justify-center' : 'justify-between'}`}
+        className={`h-12 flex items-center px-4 border-b border-gray-100 dark:border-[#30363d] ${!isExpanded ? 'justify-center' : 'justify-end'}`}
         style={{ backgroundColor: isDark ? '#0d1117' : '#ffffff' }}
       >
-        <div className={`flex items-center gap-3 overflow-hidden transition-all duration-300 ${!isExpanded ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>
-           <img src="/logo.svg" alt="Logo" className="h-10 w-10 flex-shrink-0 object-contain" />
-           <span className={`font-bold text-lg tracking-tight ${isDark ? 'text-[#e6edf3]' : 'text-black'}`}>Ortelius</span>
-        </div>
-
-        <div className="flex items-center gap-1">
-          <button
-            onClick={toggleTheme}
-            className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#21262d] hover:text-gray-700 dark:hover:text-[#e6edf3] focus:outline-none transition-colors"
-            title={isDark ? "Light Mode" : "Dark Mode"}
-          >
-            {isDark ? <LightModeIcon sx={{ fontSize: 20 }} /> : <DarkModeIcon sx={{ fontSize: 20 }} />}
-          </button>
-          
-          {isExpanded && (
-            <button
-              onClick={toggleSidebar}
-              className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#21262d] hover:text-gray-700 dark:hover:text-[#e6edf3] focus:outline-none transition-colors"
-              title="Collapse Sidebar"
-            >
-              <ChevronLeftIcon />
-            </button>
-          )}
-          
-          {!isExpanded && (
-            <button
-              onClick={toggleSidebar}
-              className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#21262d] hover:text-gray-700 dark:hover:text-[#e6edf3] focus:outline-none transition-colors"
-              title="Expand Sidebar"
-            >
-              <MenuIcon />
-            </button>
-          )}
-        </div>
+        <button
+          onClick={toggleSidebar}
+          className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#21262d] hover:text-gray-700 dark:hover:text-[#e6edf3] focus:outline-none transition-colors"
+          title={isExpanded ? "Collapse Sidebar" : "Expand Sidebar"}
+        >
+          {isExpanded ? <ChevronLeftIcon /> : <ChevronRightIcon />}
+        </button>
       </div>
 
-      <nav className="flex-1 py-4 space-y-1" style={{ backgroundColor: isDark ? '#0d1117' : '#ffffff' }}>
-        <NavItem label="Projects" subLabel="(Organizations)" icon={AccountTreeIcon} path="/projects" />
-        <NavItem label="Dashboard" icon={DashboardIcon} path="/" />
-        <NavItem label="Synced Endpoints" subLabel="(Where It's Running)" icon={HubIcon} path="/endpoints" />
-        <NavItem label="Project Releases" subLabel="(Where to Fix It)" icon={Inventory2Icon} path="/releases" />
-        <NavItem label="Mitigations" subLabel="(How to Fix It)" icon={BuildIcon} path="/mitigations" />
-        <NavItem label="Vulnerabilities" subLabel="(The Threat)" icon={ThreatIntelligence} path="/vulnerabilities" />
-
-        {hasRole(['admin']) && (
-          <>
-            <div className="my-4 border-t border-gray-200" />
-            <div className={!isExpanded ? "hidden" : "px-4 mb-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider"}>
-              Administration
-            </div>
-
-            <NavItem
-              label="User Management"
-              subLabel="(Access Control)"
-              icon={ManageAccountsIcon}
-              path="/admin/users"
-            />
-            <NavItem
-              label="System Settings"
-              subLabel="(Config)"
-              icon={SettingsIcon}
-              path="/admin/settings"
-            />
-          </>
-        )}
+      {/* Organizations Link */}
+      <nav className="py-4 space-y-1" style={{ backgroundColor: isDark ? '#0d1117' : '#ffffff' }}>
+        <NavItem
+          label="Organizations"
+          subLabel="(Context Switch)"
+          icon={AccountTreeIcon}
+          path="/projects"
+        />
       </nav>
+
+      {/* Admin Section */}
+      {hasRole(['admin']) && (
+        <nav className="py-4 space-y-1 border-t border-gray-200 dark:border-[#30363d]" style={{ backgroundColor: isDark ? '#0d1117' : '#ffffff' }}>
+          <div className={!isExpanded ? "hidden" : "px-4 mb-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider"}>
+            Administration
+          </div>
+
+          <NavItem
+            label="User Management"
+            subLabel="(Access Control)"
+            icon={ManageAccountsIcon}
+            path="/admin/users"
+          />
+          <NavItem
+            label="System Settings"
+            subLabel="(Config)"
+            icon={SettingsIcon}
+            path="/admin/settings"
+          />
+        </nav>
+      )}
 
       {/* Filters Section */}
       {showFilters && isExpanded && (
         <div 
-          className="border-t border-gray-200 p-4 animate-fadeIn" 
+          className="border-t border-gray-200 dark:border-[#30363d] p-4 animate-fadeIn" 
           style={{ backgroundColor: isDark ? '#0d1117' : '#ffffff' }}
         >
           <div className="flex items-center justify-between mb-4">
@@ -262,24 +225,22 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
                 </div>
               )}
               {showStatusFilters && (
-                <>
-                  <div>
-                    <label className="text-xs font-semibold text-gray-700 dark:text-[#c9d1d9] mb-2 block">Status</label>
-                    <div className="space-y-1.5">
-                      {['active', 'inactive', 'error'].map(status => (
-                        <label key={status} className="flex items-center cursor-pointer group">
-                          <input
-                            type="checkbox"
-                            checked={filters.status?.includes(status) || false}
-                            onChange={() => handleCheckboxChange('status', status)}
-                            className={checkboxClasses}
-                          />
-                          <span className="ml-2 text-xs text-gray-700 dark:text-[#c9d1d9] group-hover:text-gray-900 dark:group-hover:text-[#e6edf3] capitalize">{status}</span>
-                        </label>
-                      ))}
-                    </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-700 dark:text-[#c9d1d9] mb-2 block">Status</label>
+                  <div className="space-y-1.5">
+                    {['active', 'inactive', 'error'].map(status => (
+                      <label key={status} className="flex items-center cursor-pointer group">
+                        <input
+                          type="checkbox"
+                          checked={filters.status?.includes(status) || false}
+                          onChange={() => handleCheckboxChange('status', status)}
+                          className={checkboxClasses}
+                        />
+                        <span className="ml-2 text-xs text-gray-700 dark:text-[#c9d1d9] group-hover:text-gray-900 dark:group-hover:text-[#e6edf3] capitalize">{status}</span>
+                      </label>
+                    ))}
                   </div>
-                </>
+                </div>
               )}
 
               {showVulnScoreFilter && (
@@ -366,21 +327,23 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
       )}
 
       {/* Auth Slot */}
-      <AuthProfile isExpanded={isExpanded} />
+      <div className="mt-auto">
+        <AuthProfile isExpanded={isExpanded} />
 
-      {/* Save as SVG Button */}
-      <div 
-        className="p-4 border-t border-gray-200"
-        style={{ backgroundColor: isDark ? '#0d1117' : '#ffffff' }}
-      >
-        <button
-          onClick={toggleExportMode}
-          className={buttonClasses}
-          title={!isExpanded ? "Save as SVG" : ''}
+        {/* Save as SVG Button */}
+        <div 
+          className="p-4 border-t border-gray-200 dark:border-[#30363d]"
+          style={{ backgroundColor: isDark ? '#0d1117' : '#ffffff' }}
         >
-          <DownloadIcon sx={{ fontSize: 20 }} className={isDark ? "text-gray-400" : "text-gray-500"} />
-          {isExpanded && <span>Save as SVG</span>}
-        </button>
+          <button
+            onClick={toggleExportMode}
+            className={buttonClasses}
+            title={!isExpanded ? "Save as SVG" : ''}
+          >
+            <DownloadIcon sx={{ fontSize: 20 }} className={isDark ? "text-gray-400" : "text-gray-500"} />
+            {isExpanded && <span>Save as SVG</span>}
+          </button>
+        </div>
       </div>
 
     </aside>

@@ -1,9 +1,11 @@
 'use client' 
 
 import React, { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import { graphqlQuery, GET_ORG_AGGREGATED_RELEASES } from '@/lib/graphql'
 import { GetOrgAggregatedReleasesResponse, OrgAggregatedRelease } from '@/lib/types'
+import { useOrg } from '@/context/OrgContext'
 import MainLayoutWrapper from '@/components/MainLayoutWrapper'
 
 // Icons
@@ -13,6 +15,8 @@ import Inventory2Icon from '@mui/icons-material/Inventory2'
 import HubIcon from '@mui/icons-material/Hub'
 
 export default function ProjectsPage() {
+  const router = useRouter()
+  const { setSelectedOrg } = useOrg()
   const [data, setData] = useState<OrgAggregatedRelease[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -36,14 +40,19 @@ export default function ProjectsPage() {
     fetchProjects()
   }, [])
 
+  const handleOrgClick = (orgName: string) => {
+    setSelectedOrg(orgName)
+    router.push('/')
+  }
+
   return (
     <div className="flex h-screen overflow-hidden bg-white w-full">
       <Sidebar />
       <MainLayoutWrapper>
         <div className="flex-1 px-6 py-6 bg-gray-50 h-full">
           <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900">Projects</h1>
-            <p className="text-gray-600 mt-2">Organization-level view of your vulnerability landscape</p>
+            <h1 className="text-3xl font-bold text-gray-900">Organizations</h1>
+            <p className="text-gray-600 mt-2">Select an organization to view vulnerability details</p>
           </div>
 
           {loading ? (
@@ -57,7 +66,11 @@ export default function ProjectsPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {data.map((org, idx) => (
-                <div key={idx} className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 hover:shadow-md transition-shadow">
+                <div 
+                  key={idx} 
+                  onClick={() => handleOrgClick(org.org_name)}
+                  className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 hover:shadow-md transition-shadow cursor-pointer"
+                >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
@@ -77,7 +90,6 @@ export default function ProjectsPage() {
                   </div>
 
                   <div className="space-y-4">
-                    {/* Vulnerability Counts */}
                     <div>
                       <p className="text-xs font-medium text-gray-500 uppercase mb-2">Vulnerabilities</p>
                       <div className="flex gap-2">
@@ -109,7 +121,6 @@ export default function ProjectsPage() {
                       </div>
                     </div>
 
-                    {/* Stats Grid */}
                     <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100">
                       <div>
                         <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-1">
@@ -127,7 +138,6 @@ export default function ProjectsPage() {
                       </div>
                     </div>
                     
-                    {/* Delta */}
                     {org.vulnerability_count_delta !== null && org.vulnerability_count_delta !== undefined && org.vulnerability_count_delta !== 0 && (
                       <div className="pt-2">
                         <span className={`text-xs font-medium ${org.vulnerability_count_delta > 0 ? 'text-red-600' : 'text-green-600'}`}>
