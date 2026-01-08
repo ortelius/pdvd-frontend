@@ -1,20 +1,16 @@
 'use client';
 
 import React from 'react';
-import { useSidebar } from '../context/SidebarContext';
 
 export default function MainLayoutWrapper({ children }: { children: React.ReactNode }) {
-  const { isExpanded } = useSidebar();
-
   return (
     <main 
-      className="flex-1 transition-all duration-300 ease-in-out" // Tailwind classes for smooth animation
-      style={{ 
-        marginLeft: isExpanded ? '240px' : '64px', // Match your sidebar widths
-        width: '100%' 
-      }}
+      className="flex-1 flex flex-col min-h-screen h-screen overflow-hidden relative"
+      style={{ width: '100%' }}
     >
-      {children}
+      <div className="flex-1 overflow-y-auto bg-white dark:bg-[#0d1117]">
+        {children}
+      </div>
     </main>
   );
 }

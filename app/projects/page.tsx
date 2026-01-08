@@ -1,0 +1,147 @@
+'use client' 
+
+import React, { useEffect, useState } from 'react'
+import Sidebar from '@/components/Sidebar'
+import { graphqlQuery, GET_ORG_AGGREGATED_RELEASES } from '@/lib/graphql'
+import { GetOrgAggregatedReleasesResponse, OrgAggregatedRelease } from '@/lib/types'
+import MainLayoutWrapper from '@/components/MainLayoutWrapper'
+
+// Icons
+import BusinessIcon from '@mui/icons-material/Business'
+import SecurityIcon from '@mui/icons-material/Security'
+import Inventory2Icon from '@mui/icons-material/Inventory2'
+import HubIcon from '@mui/icons-material/Hub'
+
+export default function ProjectsPage() {
+  const [data, setData] = useState<OrgAggregatedRelease[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        setLoading(true)
+        const response = await graphqlQuery<GetOrgAggregatedReleasesResponse>(
+          GET_ORG_AGGREGATED_RELEASES,
+          { severity: 'NONE' }
+        )
+        setData(response.orgAggregatedReleases)
+      } catch (err) {
+        console.error('Error fetching projects:', err)
+        setError('Failed to load projects')
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchProjects()
+  }, [])
+
+  return (
+    <div className="flex h-screen overflow-hidden bg-white w-full">
+      <Sidebar />
+      <MainLayoutWrapper>
+        <div className="flex-1 px-6 py-6 bg-gray-50 h-full">
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold text-gray-900">Projects</h1>
+            <p className="text-gray-600 mt-2">Organization-level view of your vulnerability landscape</p>
+          </div>
+
+          {loading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          ) : error ? (
+            <div className="p-4 bg-red-50 text-red-800 rounded-lg">
+              {error}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {data.map((org, idx) => (
+                <div key={idx} className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 hover:shadow-md transition-shadow">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
+                        <BusinessIcon />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-gray-900 text-lg">{org.org_name || 'Library'}</h3>
+                        <p className="text-sm text-gray-500">{org.total_releases} Releases</p>
+                      </div>
+                    </div>
+                    {org.avg_scorecard_score !== undefined && org.avg_scorecard_score !== null && (
+                      <div className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded border border-gray-100">
+                        <SecurityIcon sx={{ fontSize: 16 }} className="text-green-600" />
+                        <span className="text-sm font-semibold text-gray-700">{org.avg_scorecard_score.toFixed(1)}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-4">
+                    {/* Vulnerability Counts */}
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 uppercase mb-2">Vulnerabilities</p>
+                      <div className="flex gap-2">
+                        {org.critical_count > 0 && (
+                          <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-bold">
+                            {org.critical_count} Critical
+                          </span>
+                        )}
+                        {org.high_count > 0 && (
+                          <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs font-bold">
+                            {org.high_count} High
+                          </span>
+                        )}
+                        {org.medium_count > 0 && (
+                          <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-bold">
+                            {org.medium_count} Med
+                          </span>
+                        )}
+                        {org.low_count > 0 && (
+                          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-bold">
+                            {org.low_count} Low
+                          </span>
+                        )}
+                        {org.total_vulnerabilities === 0 && (
+                          <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-bold">
+                            Clean
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100">
+                      <div>
+                        <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-1">
+                          <HubIcon sx={{ fontSize: 14 }} />
+                          Synced Endpoints
+                        </div>
+                        <p className="font-semibold text-gray-900">{org.synced_endpoint_count}</p>
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-1">
+                          <Inventory2Icon sx={{ fontSize: 14 }} />
+                          Dependencies
+                        </div>
+                        <p className="font-semibold text-gray-900">{org.total_dependencies}</p>
+                      </div>
+                    </div>
+                    
+                    {/* Delta */}
+                    {org.vulnerability_count_delta !== null && org.vulnerability_count_delta !== undefined && org.vulnerability_count_delta !== 0 && (
+                      <div className="pt-2">
+                        <span className={`text-xs font-medium ${org.vulnerability_count_delta > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                          {org.vulnerability_count_delta > 0 ? '↑' : '↓'} {Math.abs(org.vulnerability_count_delta)} new vulnerabilities
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </MainLayoutWrapper>
+    </div>
+  )
+}

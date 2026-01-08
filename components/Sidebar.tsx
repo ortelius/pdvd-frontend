@@ -11,6 +11,7 @@ import AuthProfile from '@/components/AuthProfile'
 
 // Material UI Icons
 import DashboardIcon from '@mui/icons-material/Dashboard'
+import AccountTreeIcon from '@mui/icons-material/AccountTree'
 import HubIcon from '@mui/icons-material/Hub'
 import Inventory2Icon from '@mui/icons-material/Inventory2'
 import BuildIcon from '@mui/icons-material/Build'
@@ -55,7 +56,7 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
     return pathname === path
   }
 
-  // --- Dynamic Styles based on isDark state to ensure sync ---
+  // --- Dynamic Styles ---
   const inputClasses = `w-full px-2 py-1.5 text-xs border rounded-md focus:outline-none focus:ring-1 ${
     isDark 
       ? 'bg-[#0d1117] border-[#30363d] text-[#e6edf3] focus:ring-[#58a6ff] placeholder-gray-600' 
@@ -98,7 +99,7 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
     )
   }
 
-  // --- Filter Logic (Standard) ---
+  // --- Filter Logic ---
   const isDetailView = selectedCategory === 'endpoint-detail' || selectedCategory === 'release-detail'
   const showNameFilter = !isDetailView
   const showStatusFilters = selectedCategory === 'image'
@@ -106,15 +107,16 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
   const showOpenSSFScoreFilter = selectedCategory === 'all'
   const showDetailFilters = isDetailView
   const showFilters = filters && setFilters && selectedCategory
+  
   const hasActiveFilters = filters && (
-    (filters.vulnerabilityScore && filters.vulnerabilityScore.length > 0) ||
-    (filters.openssfScore && filters.openssfScore.length > 0) ||
-    (filters.name && filters.name !== '') ||
-    (filters.status && filters.status.length > 0) ||
-    (filters.environment && filters.environment.length > 0) ||
-    (filters.endpointType && filters.endpointType.length > 0) ||
-    (filters.packageFilter && filters.packageFilter !== '') ||
-    (filters.searchCVE && filters.searchCVE !== '')
+    ((filters.vulnerabilityScore?.length ?? 0) > 0) ||
+    ((filters.openssfScore?.length ?? 0) > 0) ||
+    (filters.name !== '') ||
+    ((filters.status?.length ?? 0) > 0) ||
+    ((filters.environment?.length ?? 0) > 0) ||
+    ((filters.endpointType?.length ?? 0) > 0) ||
+    (filters.packageFilter !== '') ||
+    (filters.searchCVE !== '')
   )
 
   const handleCheckboxChange = (category: string, value: string) => {
@@ -190,6 +192,7 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
       </div>
 
       <nav className="flex-1 py-4 space-y-1" style={{ backgroundColor: isDark ? '#0d1117' : '#ffffff' }}>
+        <NavItem label="Projects" subLabel="(Organizations)" icon={AccountTreeIcon} path="/projects" />
         <NavItem label="Dashboard" icon={DashboardIcon} path="/" />
         <NavItem label="Synced Endpoints" subLabel="(Where It's Running)" icon={HubIcon} path="/endpoints" />
         <NavItem label="Project Releases" subLabel="(Where to Fix It)" icon={Inventory2Icon} path="/releases" />
@@ -365,7 +368,7 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
       {/* Auth Slot */}
       <AuthProfile isExpanded={isExpanded} />
 
-      {/* Save as SVG Button (Persistent Footer under Auth) */}
+      {/* Save as SVG Button */}
       <div 
         className="p-4 border-t border-gray-200"
         style={{ backgroundColor: isDark ? '#0d1117' : '#ffffff' }}

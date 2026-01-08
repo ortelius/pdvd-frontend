@@ -172,6 +172,26 @@ export const GET_AFFECTED_RELEASES = `
   }
 `
 
+export const GET_ORG_AGGREGATED_RELEASES = `
+  query GetOrgAggregatedReleases($severity: Severity!) {
+    orgAggregatedReleases(severity: $severity) {
+      org_name
+      total_releases
+      total_versions
+      total_vulnerabilities
+      critical_count
+      high_count
+      medium_count
+      low_count
+      max_severity_score
+      avg_scorecard_score
+      total_dependencies
+      synced_endpoint_count
+      vulnerability_count_delta
+    }
+  }
+`
+
 export const GET_SYNCED_ENDPOINTS = `
   query GetSyncedEndpoints($limit: Int) {
     syncedEndpoints(limit: $limit) {

@@ -264,3 +264,25 @@ export interface ImageData {
   total_vulnerabilities: number
   vulnerability_count_delta: number
 }
+
+// --- Org Aggregation Types ---
+
+export interface OrgAggregatedRelease {
+  org_name: string
+  total_releases: number
+  total_versions: number
+  total_vulnerabilities: number
+  critical_count: number
+  high_count: number
+  medium_count: number
+  low_count: number
+  max_severity_score: number
+  avg_scorecard_score?: number
+  total_dependencies: number
+  synced_endpoint_count: number
+  vulnerability_count_delta?: number
+}
+
+export interface GetOrgAggregatedReleasesResponse {
+  orgAggregatedReleases: OrgAggregatedRelease[]
+}
