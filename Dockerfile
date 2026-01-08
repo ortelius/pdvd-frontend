@@ -1,4 +1,4 @@
-FROM public.ecr.aws/amazonlinux/amazonlinux:2023.9.20251208.0@sha256:dc1dacae45ec346969d430237ddd1a282170ec9f322d4b3cf28ac8f1975070a1
+FROM public.ecr.aws/amazonlinux/amazonlinux:2023.10.20260105.0@sha256:e27a70c006c68f0d194cc9b9624714d6ed8d979a94f60f7d31392f4c8294155b
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 EXPOSE 8080
