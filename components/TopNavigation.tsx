@@ -29,16 +29,13 @@ export default function TopNavigation() {
     return pathname === path
   }
 
-  // Only show these nav items if an org is selected
-  // Added security-focused tagline for Dashboard: (The Posture)
-  const contextNavItems = selectedOrg ? [
+  // Always show all nav items, but disable them when no org is selected
+  const contextNavItems = [
     { label: 'Dashboard', icon: DashboardIcon, path: '/dashboard', tagline: '(The Posture)' },
     { label: 'Synced Endpoints', icon: HubIcon, path: '/endpoints', tagline: "(Where It's Running)" },
     { label: 'Project Releases', icon: Inventory2Icon, path: '/releases', tagline: '(Where to Fix It)' },
     { label: 'Mitigations', icon: BuildIcon, path: '/mitigations', tagline: '(How to Fix It)' },
     { label: 'Vulnerabilities', icon: ThreatIntelligence, path: '/vulnerabilities', tagline: '(The Threat)' },
-  ] : [
-    { label: 'Dashboard', icon: DashboardIcon, path: '/dashboard', tagline: '(The Posture)' },
   ]
 
   // Define which labels constitute "List Pages" that should be clickable
@@ -195,7 +192,28 @@ export default function TopNavigation() {
           {contextNavItems.map((item) => {
             const Icon = item.icon
             const active = isActive(item.path)
-            return (
+            const isDisabled = !selectedOrg
+
+            return isDisabled ? (
+              <div
+                key={item.path}
+                className={`
+                  flex items-center gap-2 px-4 h-full text-sm font-medium border-b-2 whitespace-nowrap
+                  border-transparent text-gray-400 dark:text-gray-700 cursor-not-allowed opacity-50
+                `}
+                title="Select an organization to enable"
+              >
+                <Icon sx={{ fontSize: 18 }} />
+                <div className="flex flex-col items-start leading-tight">
+                  <span>{item.label}</span>
+                  {item.tagline && (
+                    <span className="text-[10px] font-normal opacity-60">
+                      {item.tagline}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ) : (
               <Link
                 key={item.path}
                 href={item.path}
