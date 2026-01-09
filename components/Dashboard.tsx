@@ -1,8 +1,6 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import Skeleton from 'react-loading-skeleton'
-import 'react-loading-skeleton/dist/skeleton.css'
 import {
   AreaChart,
   Area,
@@ -51,50 +49,6 @@ const COLORS = {
   LOW: '#3b82f6',
   NONE: '#9ca3af'
 }
-
-// Skeleton Components
-const SkeletonCard = () => (
-  <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm h-full">
-    <Skeleton circle width={40} height={40} />
-    <Skeleton width="75%" style={{ marginTop: 12 }} />
-    <Skeleton width="50%" height={32} style={{ marginTop: 8 }} />
-    <Skeleton count={2} style={{ marginTop: 12 }} />
-  </div>
-)
-
-const SkeletonTable = () => (
-  <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col" style={{ minHeight: '400px' }}>
-    <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
-      <Skeleton width="40%" height={24} />
-    </div>
-    <div className="overflow-x-auto flex-1 p-6">
-      <Skeleton count={6} height={40} style={{ marginTop: 8 }} />
-    </div>
-  </div>
-)
-
-const SkeletonChart = ({ height = '400px' }: { height?: string }) => (
-  <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex flex-col" style={{ minHeight: height }}>
-    <Skeleton width="50%" height={24} style={{ marginBottom: 24 }} />
-    <Skeleton height={parseInt(height) - 100} />
-  </div>
-)
-
-const SkeletonVelocityCard = () => (
-  <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex flex-col" style={{ minHeight: '500px' }}>
-    <Skeleton width="70%" height={24} style={{ marginBottom: 16 }} />
-    <div className="grid grid-cols-2 gap-4 mb-6">
-      {[1, 2, 3, 4].map(i => (
-        <div key={i}>
-          <Skeleton count={3} />
-        </div>
-      ))}
-    </div>
-    <div className="pt-6 border-t border-gray-200">
-      <Skeleton count={3} height={60} />
-    </div>
-  </div>
-)
 
 export default function Dashboard() {
   const { selectedOrg } = useOrg()
@@ -214,35 +168,10 @@ export default function Dashboard() {
 
   if (loadingMttr || loadingGlobalStatus) {
     return (
-      <div className="flex-1 p-6 bg-gray-50 h-full space-y-8 font-sans overflow-y-auto">
-        <div className="flex justify-between items-end">
-          <div className="flex-1">
-            <Skeleton width="60%" height={32} />
-            <div className="flex gap-2 mt-2">
-              <Skeleton width={120} height={24} />
-              <Skeleton width={140} height={24} />
-              <Skeleton width={200} height={24} />
-            </div>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {[1, 2, 3, 4, 5].map(i => <SkeletonCard key={i} />)}
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <SkeletonTable />
-          </div>
-          <div>
-            <SkeletonChart height="400px" />
-          </div>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <SkeletonChart height="500px" />
-          </div>
-          <div>
-            <SkeletonVelocityCard />
-          </div>
+      <div className="flex-1 p-6 bg-gray-50 h-full flex items-center justify-center font-sans">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <p className="mt-4 text-gray-600">Loading dashboard...</p>
         </div>
       </div>
     )

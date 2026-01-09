@@ -9,14 +9,37 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [isDark, setIsDark] = useState(false)
+// Function to get initial theme from localStorage (only runs on client)
+function getInitialTheme(): boolean {
+  if (typeof window === 'undefined') return false
+  
+  try {
+    const stored = localStorage.getItem('ortelius_theme')
+    return stored === 'dark'
+  } catch {
+    return false
+  }
+}
 
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  // Initialize with localStorage value to match the blocking script
+  const [isDark, setIsDark] = useState(getInitialTheme)
+
+  // Sync with localStorage changes and ensure DOM is updated
   useEffect(() => {
     const stored = localStorage.getItem('ortelius_theme')
-    if (stored === 'dark') {
-      setIsDark(true)
+    const shouldBeDark = stored === 'dark'
+    
+    // Update state if it doesn't match localStorage
+    if (shouldBeDark !== isDark) {
+      setIsDark(shouldBeDark)
+    }
+    
+    // Ensure the DOM class matches the state
+    if (shouldBeDark) {
       document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
     }
   }, [])
 

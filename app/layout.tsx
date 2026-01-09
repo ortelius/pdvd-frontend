@@ -31,6 +31,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="preconnect" href="https://app.ortelius.io" />
         <link rel="dns-prefetch" href="https://app.ortelius.io" />
+        {/* Blocking script to prevent dark mode flash */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  const theme = localStorage.getItem('ortelius_theme');
+                  if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
       </head>
       <body className="overflow-hidden">
         <ThemeProvider>
