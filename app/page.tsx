@@ -42,7 +42,7 @@ export default function ProjectsPage() {
 
   const handleOrgClick = (orgName: string) => {
     setSelectedOrg(orgName)
-    router.push('/')
+    router.push('/dashboard')
   }
 
   return (

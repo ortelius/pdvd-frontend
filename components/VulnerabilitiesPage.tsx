@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import { Mitigation } from '@/lib/types'
 import { graphqlQuery, GET_VULNERABILITIES } from '@/lib/graphql'
+import { useOrg } from '@/context/OrgContext'
 
 interface GetVulnerabilitiesResponse {
   vulnerabilities: Mitigation[]
@@ -12,6 +13,7 @@ interface GetVulnerabilitiesResponse {
 
 export default function VulnerabilitiesPage() {
   const router = useRouter()
+  const { selectedOrg } = useOrg()
   
   const [filters, setFilters] = useState({
     vulnerabilityScore: [] as string[],
@@ -35,7 +37,7 @@ export default function VulnerabilitiesPage() {
 
         const response = await graphqlQuery<GetVulnerabilitiesResponse>(
           GET_VULNERABILITIES,
-          { limit: 1000 }
+          { limit: 1000, org: selectedOrg || "" }
         )
 
         setVulnerabilities(response.vulnerabilities)
@@ -49,7 +51,7 @@ export default function VulnerabilitiesPage() {
     }
 
     fetchVulnerabilities()
-  }, [])
+  }, [selectedOrg])
 
   useEffect(() => {
     let filtered = vulnerabilities

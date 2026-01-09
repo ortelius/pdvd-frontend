@@ -23,53 +23,79 @@ export default function TopNavigation() {
   const pathname = usePathname()
   const { isDark, toggleTheme } = useTheme()
   const { toggleSidebar } = useSidebar()
-  const { selectedOrg } = useOrg()
+  const { selectedOrg, setSelectedOrg } = useOrg()
 
   const isActive = (path: string) => {
     return pathname === path
   }
 
   // Only show these nav items if an org is selected
+  // Added security-focused tagline for Dashboard: (The Posture)
   const contextNavItems = selectedOrg ? [
-    { label: 'Dashboard', icon: DashboardIcon, path: '/dashboard' },
-    { label: 'Endpoints', icon: HubIcon, path: '/endpoints' },
-    { label: 'Releases', icon: Inventory2Icon, path: '/releases' },
-    { label: 'Mitigations', icon: BuildIcon, path: '/mitigations' },
-    { label: 'Vulnerabilities', icon: ThreatIntelligence, path: '/vulnerabilities' },
+    { label: 'Dashboard', icon: DashboardIcon, path: '/dashboard', tagline: '(The Posture)' },
+    { label: 'Synced Endpoints', icon: HubIcon, path: '/endpoints', tagline: "(Where It's Running)" },
+    { label: 'Project Releases', icon: Inventory2Icon, path: '/releases', tagline: '(Where to Fix It)' },
+    { label: 'Mitigations', icon: BuildIcon, path: '/mitigations', tagline: '(How to Fix It)' },
+    { label: 'Vulnerabilities', icon: ThreatIntelligence, path: '/vulnerabilities', tagline: '(The Threat)' },
   ] : [
-    { label: 'Dashboard', icon: DashboardIcon, path: '/dashboard' },
+    { label: 'Dashboard', icon: DashboardIcon, path: '/dashboard', tagline: '(The Posture)' },
   ]
+
+  // Define which labels constitute "List Pages" that should be clickable
+  const CLICKABLE_LABELS = new Set([
+    'Dashboard',
+    'Synced Endpoints',
+    'Project Releases',
+    'Mitigations',
+    'Vulnerabilities',
+    'Organizations'
+  ])
 
   // Generate breadcrumbs from pathname
   const generateBreadcrumbs = () => {
     const paths = pathname.split('/').filter(Boolean)
-    const breadcrumbs = [{ label: 'Ortelius', path: '/dashboard' }]
+    const breadcrumbs = [{ label: 'Dashboard', path: '/dashboard' }]
 
-    // Add selected org to breadcrumb if exists
     if (selectedOrg && pathname !== '/projects') {
       breadcrumbs.push({ label: selectedOrg, path: '/projects' })
     }
 
     let currentPath = ''
+    
     paths.forEach((segment) => {
       currentPath += `/${segment}`
       
       const decodedSegment = decodeURIComponent(segment)
       let label = decodedSegment
+      let linkPath = currentPath
+
+      if (segment === 'dashboard') {
+        return 
+      } else if (segment === 'endpoints') {
+        label = 'Synced Endpoints'
+      } else if (segment === 'releases') {
+        label = 'Project Releases'
+      } else if (segment === 'projects') {
+        label = 'Organizations'
+      } else if (segment === 'mitigations') {
+        label = 'Mitigations'
+      } else if (segment === 'vulnerabilities') {
+        label = 'Vulnerabilities'
+      } else if (segment === 'endpoint') {
+        label = 'Synced Endpoints'
+        linkPath = '/endpoints' 
+      } else if (segment === 'release') {
+        label = 'Project Releases'
+        linkPath = '/releases' 
+      } else if (segment === 'vulnerability') {
+        label = 'Vulnerabilities'
+        linkPath = '/vulnerabilities' 
+      } else if (segment === 'admin') {
+        label = 'Admin'
+      }
       
-      if (segment === 'endpoints') label = 'Endpoints'
-      else if (segment === 'releases') label = 'Releases'
-      else if (segment === 'projects') label = 'Organizations'
-      else if (segment === 'mitigations') label = 'Mitigations'
-      else if (segment === 'vulnerabilities') label = 'Vulnerabilities'
-      else if (segment === 'endpoint') label = 'Endpoint'
-      else if (segment === 'release') label = 'Release'
-      else if (segment === 'vulnerability') label = 'Vulnerability'
-      else if (segment === 'admin') label = 'Admin'
-      
-      // Don't duplicate org name in breadcrumb
       if (segment !== 'projects' || !selectedOrg) {
-        breadcrumbs.push({ label, path: currentPath })
+        breadcrumbs.push({ label, path: linkPath })
       }
     })
 
@@ -83,7 +109,6 @@ export default function TopNavigation() {
       className="flex-shrink-0"
       style={{ backgroundColor: isDark ? '#161b22' : '#f9fafb' }}
     >
-      {/* Row 1: Logo, Organizations Button, Breadcrumbs, Controls */}
       <div className="flex items-center justify-between h-12 px-4">
         <div className="flex items-center gap-3 flex-1 min-w-0 overflow-x-auto">
           <button
@@ -102,9 +127,9 @@ export default function TopNavigation() {
             <img src="/logo.svg" alt="Ortelius" className="h-7 w-7 object-contain" />
           </Link>
             
-            {/* Organizations Context Switch Button */}
             <Link
-              href="/projects"
+              href="/"
+              onClick={() => setSelectedOrg(null)}
               className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
                 isDark 
                   ? 'text-gray-300 bg-[#21262d] hover:bg-[#30363d] hover:text-white' 
@@ -118,26 +143,38 @@ export default function TopNavigation() {
             
             {breadcrumbs.length > 1 && (
               <div className="flex items-center gap-2">
-                {breadcrumbs.slice(1).map((crumb, index) => (
-                  <React.Fragment key={crumb.path}>
-                    {index > 0 && (
-                      <ChevronRightIcon 
-                        sx={{ fontSize: 16 }} 
-                        className="text-gray-400 dark:text-gray-600 flex-shrink-0" 
-                      />
-                    )}
-                    <Link
-                      href={crumb.path}
-                      className={`text-sm font-semibold whitespace-nowrap ${
-                        index === breadcrumbs.length - 2
-                          ? 'text-gray-900 dark:text-[#e6edf3]'
-                          : 'text-blue-600 dark:text-[#58a6ff] hover:underline'
-                      }`}
-                    >
-                      {crumb.label}
-                    </Link>
-                  </React.Fragment>
-                ))}
+                {breadcrumbs.slice(1).map((crumb, index) => {
+                  const isLast = index === breadcrumbs.length - 2 
+                  const isClickable = CLICKABLE_LABELS.has(crumb.label)
+
+                  return (
+                    <React.Fragment key={crumb.path + index}>
+                      {index > 0 && (
+                        <ChevronRightIcon 
+                          sx={{ fontSize: 16 }} 
+                          className="text-gray-400 dark:text-gray-600 flex-shrink-0" 
+                        />
+                      )}
+                      
+                      {isClickable ? (
+                        <Link
+                          href={crumb.path}
+                          className={`text-sm font-semibold whitespace-nowrap ${
+                            isLast
+                              ? 'text-gray-900 dark:text-[#e6edf3]'
+                              : 'text-blue-600 dark:text-[#58a6ff] hover:underline'
+                          }`}
+                        >
+                          {crumb.label}
+                        </Link>
+                      ) : (
+                        <span className="text-sm font-semibold whitespace-nowrap text-gray-900 dark:text-[#e6edf3] cursor-default">
+                          {crumb.label}
+                        </span>
+                      )}
+                    </React.Fragment>
+                  )
+                })}
               </div>
             )}
           </div>
@@ -153,9 +190,8 @@ export default function TopNavigation() {
         </div>
       </div>
 
-      {/* Row 2: Context Navigation */}
-      <div className="flex items-center h-12 px-4 overflow-x-auto">
-        <div className="flex items-center gap-1">
+      <div className="flex items-center h-16 pl-[100px] pr-4 overflow-x-auto border-t border-gray-200 dark:border-gray-800">
+        <div className="flex items-center gap-1 h-full">
           {contextNavItems.map((item) => {
             const Icon = item.icon
             const active = isActive(item.path)
@@ -164,7 +200,7 @@ export default function TopNavigation() {
                 key={item.path}
                 href={item.path}
                 className={`
-                  flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap
+                  flex items-center gap-2 px-4 h-full text-sm font-medium border-b-2 transition-colors whitespace-nowrap
                   ${active 
                     ? 'border-blue-600 dark:border-[#58a6ff] text-gray-900 dark:text-[#e6edf3]' 
                     : 'border-transparent text-gray-600 dark:text-[#7d8590] hover:text-gray-900 dark:hover:text-[#e6edf3] hover:border-gray-300 dark:hover:border-[#30363d]'
@@ -172,7 +208,14 @@ export default function TopNavigation() {
                 `}
               >
                 <Icon sx={{ fontSize: 18 }} />
-                {item.label}
+                <div className="flex flex-col items-start leading-tight">
+                  <span>{item.label}</span>
+                  {item.tagline && (
+                    <span className="text-[10px] font-normal opacity-60">
+                      {item.tagline}
+                    </span>
+                  )}
+                </div>
               </Link>
             )
           })}

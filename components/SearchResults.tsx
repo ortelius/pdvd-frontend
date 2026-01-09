@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { useOrg } from '@/context/OrgContext'
 
 import {
   graphqlQuery,
@@ -75,6 +76,7 @@ const mockMitigations: Mitigation[] = [
 
 export default function SearchResults({ query, category, filters }: SearchResultsProps) {
   const router = useRouter()
+  const { selectedOrg } = useOrg()
   
   const [results, setResults] = useState<ImageData[]>([])
   const [endpointResults, setEndpointResults] = useState<SyncedEndpoint[]>([])
@@ -82,7 +84,7 @@ export default function SearchResults({ query, category, filters }: SearchResult
   const [mockMitigationList, setMockMitigationList] = useState<Mitigation[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [fetchedCategories, setFetchedCategories] = useState<Set<string>>(new Set())
+  // Removed fetchedCategories cache to ensure refetch when org changes
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(12)
   const [selectedMitigations, setSelectedMitigations] = useState<Set<string>>(new Set())
@@ -91,17 +93,17 @@ export default function SearchResults({ query, category, filters }: SearchResult
 
   useEffect(() => {
     const fetchDataForCategory = async () => {
-      if (fetchedCategories.has(category)) return
-
       try {
         setLoading(true)
         setError(null)
+
+        const orgParam = selectedOrg || ""
 
         switch (category) {
           case 'all':
             const releasesResponse = await graphqlQuery<GetAffectedReleasesResponse>(
               GET_AFFECTED_RELEASES,
-              { severity: 'NONE', limit: 1000 }
+              { severity: 'NONE', limit: 1000, org: orgParam }
             )
             const imageData = transformAffectedReleasesToImageData(releasesResponse.affectedReleases)
             setResults(imageData)
@@ -110,7 +112,7 @@ export default function SearchResults({ query, category, filters }: SearchResult
           case 'image':
             const endpointsResponse = await graphqlQuery<GetSyncedEndpointsResponse>(
               GET_SYNCED_ENDPOINTS,
-              { limit: 1000 }
+              { limit: 1000, org: orgParam }
             )
             setEndpointResults(endpointsResponse.syncedEndpoints)
             break
@@ -118,7 +120,7 @@ export default function SearchResults({ query, category, filters }: SearchResult
           case 'plugin':
             const vulnerabilitiesResponse = await graphqlQuery<GetVulnerabilitiesResponse>(
               GET_VULNERABILITIES, 
-              { limit: 1000 }
+              { limit: 1000, org: orgParam }
             )
             setVulnerabilityResults(vulnerabilitiesResponse.vulnerabilities)
             break
@@ -127,8 +129,6 @@ export default function SearchResults({ query, category, filters }: SearchResult
             setMockMitigationList(mockMitigations)
             break
         }
-
-        setFetchedCategories(prev => new Set(prev).add(category))
       } catch (err) {
         console.error(`Error fetching ${category} data:`, err)
         setError(err instanceof Error ? err.message : 'Failed to fetch data')
@@ -138,13 +138,13 @@ export default function SearchResults({ query, category, filters }: SearchResult
     }
 
     fetchDataForCategory()
-  }, [category, fetchedCategories])
+  }, [category, selectedOrg]) // Added selectedOrg dependency
 
   useEffect(() => {
     setCurrentPage(1)
     setSelectedMitigations(new Set())
     setShowActionMenu(false)
-  }, [query, filters, category])
+  }, [query, filters, category, selectedOrg])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

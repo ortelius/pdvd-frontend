@@ -7,9 +7,10 @@ export default function Home() {
   return (
     <>
       <Sidebar />
-      <div className="flex-1 px-6 py-6">
-        <Dashboard />
-      </div>
+      {/* Removed the wrapper div with padding. 
+        Dashboard component now manages its own full-height container and internal scrolling.
+      */}
+      <Dashboard />
     </>
   )
 }

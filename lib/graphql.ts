@@ -151,8 +151,8 @@ export const GET_RELEASE = `
 `
 
 export const GET_AFFECTED_RELEASES = `
-  query GetAffectedReleases($severity: Severity!, $limit: Int) {
-    affectedReleases(severity: $severity, limit: $limit) {
+  query GetAffectedReleases($severity: Severity!, $limit: Int, $org: String) {
+    affectedReleases(severity: $severity, limit: $limit, org: $org) {
       cve_id
       summary
       severity_score
@@ -193,8 +193,8 @@ export const GET_ORG_AGGREGATED_RELEASES = `
 `
 
 export const GET_SYNCED_ENDPOINTS = `
-  query GetSyncedEndpoints($limit: Int) {
-    syncedEndpoints(limit: $limit) {
+  query GetSyncedEndpoints($limit: Int, $org: String) {
+    syncedEndpoints(limit: $limit, org: $org) {
       endpoint_name
       endpoint_url
       endpoint_type
@@ -252,8 +252,8 @@ export const GET_MITIGATIONS = `
 `
 
 export const GET_VULNERABILITIES = `
-  query GetVulnerabilities($limit: Int) {
-    vulnerabilities(limit: $limit) {
+  query GetVulnerabilities($limit: Int, $org: String) {
+    vulnerabilities(limit: $limit, org: $org) {
       cve_id
       summary
       severity_score
@@ -308,8 +308,8 @@ export const GET_ENDPOINT_DETAILS = `
 `
 
 export const GET_DASHBOARD_VULNERABILITY_TREND = `
-  query GetDashboardVulnerabilityTrend($days: Int) {
-    dashboardVulnerabilityTrend(days: $days) {
+  query GetDashboardVulnerabilityTrend($days: Int, $org: String) {
+    dashboardVulnerabilityTrend(days: $days, org: $org) {
       date
       critical
       high
@@ -320,8 +320,8 @@ export const GET_DASHBOARD_VULNERABILITY_TREND = `
 `
 
 export const GET_DASHBOARD_GLOBAL_STATUS = `
-  query DashboardGlobalStatus {
-    dashboardGlobalStatus {
+  query DashboardGlobalStatus($org: String) {
+    dashboardGlobalStatus(org: $org) {
       critical { count delta }
       high { count delta }
       medium { count delta }
@@ -335,8 +335,8 @@ export const GET_DASHBOARD_GLOBAL_STATUS = `
 `
 
 export const GET_MTTR_ANALYSIS = `
-  query MTTRAnalysis($days: Int!) {
-    dashboardMTTR(days: $days) {
+  query MTTRAnalysis($days: Int!, $org: String) {
+    dashboardMTTR(days: $days, org: $org) {
       executive_summary {
         total_new_cves
         total_fixed_cves
