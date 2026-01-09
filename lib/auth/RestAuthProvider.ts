@@ -11,12 +11,12 @@ export class RestAuthProvider implements AuthProvider {
 
   private async getRestEndpoint (): Promise<string> {
     try {
-      const res = await fetch('/api/config')
+      const res = await fetch('/config')
       const contentType = res.headers.get('content-type')
       const isJson = contentType?.includes('application/json') === true
 
       if (!res.ok || !isJson) {
-        console.warn(`Failed to fetch /api/config (Status: ${res.status}). Falling back to default.`)
+        console.warn(`Failed to fetch /config (Status: ${res.status}). Falling back to default.`)
         return 'http://localhost:3000/api/v1'
       }
 

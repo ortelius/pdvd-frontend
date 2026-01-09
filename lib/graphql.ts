@@ -10,15 +10,15 @@ async function getGraphqlEndpoint (): Promise<string> {
   }
 
   try {
-    // 1. Updated to match the app/api/config/route.ts location
-    const res = await fetch('/api/config')
+    // 1. Updated to match the app/config/route.ts location
+    const res = await fetch('/config')
 
     // 2. Safety check: ensure the response is valid JSON
     const contentType = res.headers.get('content-type')
     const isJson = contentType?.includes('application/json') === true
 
     if (!res.ok || !isJson) {
-      console.warn(`Failed to fetch /api/config (Status: ${res.status}). Falling back to default.`)
+      console.warn(`Failed to fetch /config (Status: ${res.status}). Falling back to default.`)
       return '/api/v1/graphql'
     }
 
