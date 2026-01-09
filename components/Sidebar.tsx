@@ -11,13 +11,10 @@ import { usePathname } from 'next/navigation'
 
 // Material UI Icons
 import SettingsIcon from '@mui/icons-material/Settings'
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
-import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts'
 import DownloadIcon from '@mui/icons-material/Download'
-import AccountTreeIcon from '@mui/icons-material/AccountTree'
 
 interface SidebarProps {
   filters?: {
@@ -135,37 +132,16 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
 
   return (
     <aside 
-      className={`${!isExpanded ? 'w-20' : 'w-64'} border-r border-gray-200 dark:border-[#30363d] flex flex-col h-full overflow-y-auto flex-shrink-0 transition-all duration-300 ease-in-out`}
-      style={{ backgroundColor: isDark ? '#0d1117' : '#ffffff' }}
+      className={`${!isExpanded ? 'w-20' : 'w-64'} border-r flex flex-col h-full overflow-y-auto flex-shrink-0 transition-all duration-300 ease-in-out`}
+      style={{ 
+        backgroundColor: isDark ? '#0d1117' : '#ffffff',
+        borderColor: isDark ? '#21262d' : '#f3f4f6'
+      }}
     >
-
-      {/* Header */}
-      <div 
-        className={`h-12 flex items-center px-4 border-b border-gray-100 dark:border-[#30363d] ${!isExpanded ? 'justify-center' : 'justify-end'}`}
-        style={{ backgroundColor: isDark ? '#0d1117' : '#ffffff' }}
-      >
-        <button
-          onClick={toggleSidebar}
-          className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#21262d] hover:text-gray-700 dark:hover:text-[#e6edf3] focus:outline-none transition-colors"
-          title={isExpanded ? "Collapse Sidebar" : "Expand Sidebar"}
-        >
-          {isExpanded ? <ChevronLeftIcon /> : <ChevronRightIcon />}
-        </button>
-      </div>
-
-      {/* Organizations Link */}
-      <nav className="py-4 space-y-1" style={{ backgroundColor: isDark ? '#0d1117' : '#ffffff' }}>
-        <NavItem
-          label="Organizations"
-          subLabel="(Context Switch)"
-          icon={AccountTreeIcon}
-          path="/projects"
-        />
-      </nav>
 
       {/* Admin Section */}
       {hasRole(['admin']) && (
-        <nav className="py-4 space-y-1 border-t border-gray-200 dark:border-[#30363d]" style={{ backgroundColor: isDark ? '#0d1117' : '#ffffff' }}>
+        <nav className="py-4 space-y-1" style={{ backgroundColor: isDark ? '#0d1117' : '#ffffff' }}>
           <div className={!isExpanded ? "hidden" : "px-4 mb-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider"}>
             Administration
           </div>
@@ -188,7 +164,7 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
       {/* Filters Section */}
       {showFilters && isExpanded && (
         <div 
-          className="border-t border-gray-200 dark:border-[#30363d] p-4 animate-fadeIn" 
+          className="p-4 animate-fadeIn" 
           style={{ backgroundColor: isDark ? '#0d1117' : '#ffffff' }}
         >
           <div className="flex items-center justify-between mb-4">
@@ -327,12 +303,12 @@ export default function Sidebar({ filters, setFilters, selectedCategory }: Sideb
       )}
 
       {/* Auth Slot */}
-      <div className="mt-auto">
+      <div>
         <AuthProfile isExpanded={isExpanded} />
 
         {/* Save as SVG Button */}
         <div 
-          className="p-4 border-t border-gray-200 dark:border-[#30363d]"
+          className="p-4"
           style={{ backgroundColor: isDark ? '#0d1117' : '#ffffff' }}
         >
           <button

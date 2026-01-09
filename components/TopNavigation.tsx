@@ -16,6 +16,7 @@ import LightModeIcon from '@mui/icons-material/LightMode'
 import DarkModeIcon from '@mui/icons-material/DarkMode'
 import MenuIcon from '@mui/icons-material/Menu'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
+import AccountTreeIcon from '@mui/icons-material/AccountTree'
 import { ThreatIntelligence } from '@/components/icons'
 
 export default function TopNavigation() {
@@ -25,25 +26,24 @@ export default function TopNavigation() {
   const { selectedOrg } = useOrg()
 
   const isActive = (path: string) => {
-    if (path === '/' && pathname !== '/') return false
     return pathname === path
   }
 
   // Only show these nav items if an org is selected
   const contextNavItems = selectedOrg ? [
-    { label: 'Dashboard', icon: DashboardIcon, path: '/' },
+    { label: 'Dashboard', icon: DashboardIcon, path: '/dashboard' },
     { label: 'Endpoints', icon: HubIcon, path: '/endpoints' },
     { label: 'Releases', icon: Inventory2Icon, path: '/releases' },
     { label: 'Mitigations', icon: BuildIcon, path: '/mitigations' },
     { label: 'Vulnerabilities', icon: ThreatIntelligence, path: '/vulnerabilities' },
   ] : [
-    { label: 'Dashboard', icon: DashboardIcon, path: '/' },
+    { label: 'Dashboard', icon: DashboardIcon, path: '/dashboard' },
   ]
 
   // Generate breadcrumbs from pathname
   const generateBreadcrumbs = () => {
     const paths = pathname.split('/').filter(Boolean)
-    const breadcrumbs = [{ label: 'Ortelius', path: '/' }]
+    const breadcrumbs = [{ label: 'Ortelius', path: '/dashboard' }]
 
     // Add selected org to breadcrumb if exists
     if (selectedOrg && pathname !== '/projects') {
@@ -80,47 +80,67 @@ export default function TopNavigation() {
 
   return (
     <nav 
-      className="border-b border-gray-200 dark:border-[#30363d] flex-shrink-0"
-      style={{ backgroundColor: isDark ? '#0d1117' : '#ffffff' }}
+      className="flex-shrink-0"
+      style={{ backgroundColor: isDark ? '#161b22' : '#f9fafb' }}
     >
-      {/* Row 1: Logo, Breadcrumbs, Controls */}
-      <div className="flex items-center justify-between h-12 px-4 border-b border-gray-200 dark:border-[#30363d]">
-        <div className="flex items-center gap-4 flex-1 min-w-0">
+      {/* Row 1: Logo, Organizations Button, Breadcrumbs, Controls */}
+      <div className="flex items-center justify-between h-12 px-4">
+        <div className="flex items-center gap-3 flex-1 min-w-0 overflow-x-auto">
           <button
             onClick={toggleSidebar}
-            className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#21262d] hover:text-gray-700 dark:hover:text-[#e6edf3] focus:outline-none transition-colors"
+            className={`p-1.5 rounded-md transition-colors focus:outline-none ${
+              isDark 
+                ? 'text-gray-300 bg-[#21262d] hover:bg-[#30363d] hover:text-white' 
+                : 'text-gray-700 bg-gray-100 hover:bg-gray-200 hover:text-gray-900'
+            }`}
             title="Toggle Sidebar"
           >
             <MenuIcon sx={{ fontSize: 20 }} />
           </button>
 
-          <div className="flex items-center gap-2 min-w-0 overflow-x-auto">
-            <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-              <img src="/logo.svg" alt="Ortelius" className="h-7 w-7 object-contain" />
+          <Link href="/dashboard" className="flex items-center gap-2 flex-shrink-0">
+            <img src="/logo.svg" alt="Ortelius" className="h-7 w-7 object-contain" />
+          </Link>
+            
+            {/* Organizations Context Switch Button */}
+            <Link
+              href="/projects"
+              className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                isDark 
+                  ? 'text-gray-300 bg-[#21262d] hover:bg-[#30363d] hover:text-white' 
+                  : 'text-gray-700 bg-gray-100 hover:bg-gray-200 hover:text-gray-900'
+              }`}
+              title="Switch Organization"
+            >
+              <AccountTreeIcon sx={{ fontSize: 18 }} />
+              <span>Switch Org</span>
             </Link>
             
-            {breadcrumbs.map((crumb, index) => (
-              <React.Fragment key={crumb.path}>
-                {index > 0 && (
-                  <ChevronRightIcon 
-                    sx={{ fontSize: 16 }} 
-                    className="text-gray-400 dark:text-gray-600 flex-shrink-0" 
-                  />
-                )}
-                <Link
-                  href={crumb.path}
-                  className={`text-sm font-semibold whitespace-nowrap ${
-                    index === breadcrumbs.length - 1
-                      ? 'text-gray-900 dark:text-[#e6edf3]'
-                      : 'text-blue-600 dark:text-[#58a6ff] hover:underline'
-                  }`}
-                >
-                  {crumb.label}
-                </Link>
-              </React.Fragment>
-            ))}
+            {breadcrumbs.length > 1 && (
+              <div className="flex items-center gap-2">
+                {breadcrumbs.slice(1).map((crumb, index) => (
+                  <React.Fragment key={crumb.path}>
+                    {index > 0 && (
+                      <ChevronRightIcon 
+                        sx={{ fontSize: 16 }} 
+                        className="text-gray-400 dark:text-gray-600 flex-shrink-0" 
+                      />
+                    )}
+                    <Link
+                      href={crumb.path}
+                      className={`text-sm font-semibold whitespace-nowrap ${
+                        index === breadcrumbs.length - 2
+                          ? 'text-gray-900 dark:text-[#e6edf3]'
+                          : 'text-blue-600 dark:text-[#58a6ff] hover:underline'
+                      }`}
+                    >
+                      {crumb.label}
+                    </Link>
+                  </React.Fragment>
+                ))}
+              </div>
+            )}
           </div>
-        </div>
 
         <div className="flex items-center gap-2 flex-shrink-0">
           <button

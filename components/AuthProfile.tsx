@@ -19,7 +19,7 @@ export default function AuthProfile({ isExpanded }: { isExpanded: boolean }) {
   if (isLoading) {
     return (
       <div 
-        className="p-4 border-t border-gray-200 dark:border-[#30363d] mt-auto flex justify-center"
+        className="p-4 flex justify-center"
         style={{ backgroundColor: isDark ? '#161b22' : '#ffffff' }}
       >
         <div className="w-5 h-5 border-2 border-blue-600 dark:border-[#58a6ff] border-t-transparent rounded-full animate-spin"></div>
@@ -31,7 +31,7 @@ export default function AuthProfile({ isExpanded }: { isExpanded: boolean }) {
   if (user) {
     return (
       <div 
-        className="p-4 border-t border-gray-200 dark:border-[#30363d] mt-auto"
+        className="p-4"
         style={{ backgroundColor: isDark ? '#161b22' : '#f9fafb' }}
       >
         <div className={`flex items-center gap-3 ${!isExpanded ? 'justify-center' : 'mb-3'}`}>
@@ -83,7 +83,7 @@ export default function AuthProfile({ isExpanded }: { isExpanded: boolean }) {
   if (!isExpanded) {
     return (
       <div 
-        className="p-4 border-t border-gray-200 dark:border-[#30363d] mt-auto flex flex-col items-center gap-4"
+        className="p-4 flex flex-col items-center gap-4"
         style={{ backgroundColor: isDark ? '#0d1117' : '#ffffff' }}
       >
         <button 
@@ -99,7 +99,7 @@ export default function AuthProfile({ isExpanded }: { isExpanded: boolean }) {
 
   return (
     <div 
-      className="p-4 border-t border-gray-200 dark:border-[#30363d] mt-auto"
+      className="p-4"
       style={{ backgroundColor: isDark ? '#0d1117' : '#ffffff' }}
     >
       <form onSubmit={handleSubmit} className="space-y-3">
