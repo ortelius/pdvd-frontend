@@ -1,7 +1,7 @@
-// File path: app/api/config/route.ts
 import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
-export async function GET (): Promise<NextResponse> {
+export async function GET(request: NextRequest) {
   const graphqlEndpoint =
     process.env.RUNTIME_GRAPHQL_ENDPOINT !== undefined
       ? process.env.RUNTIME_GRAPHQL_ENDPOINT
@@ -17,3 +17,5 @@ export async function GET (): Promise<NextResponse> {
     restEndpoint
   })
 }
+
+export const dynamic = 'force-dynamic'
