@@ -17,7 +17,7 @@ export default function ActivationPage() {
 
   // Helper to fetch the REST endpoint dynamically from the config route
 const getRestEndpoint = async () => {
-const res = await fetch('/api/config')
+const res = await fetch('/config')
 
 // Safety check: ensure the response is OK and is JSON
 if (!res.ok || !res.headers.get('content-type')?.includes('application/json')) {

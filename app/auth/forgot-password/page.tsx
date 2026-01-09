@@ -14,7 +14,7 @@ export default function ForgotPasswordPage() {
 
     try {
       // Fetch dynamic configuration
-      const configRes = await fetch('/api/config')
+      const configRes = await fetch('/config')
       const config = await configRes.json()
 
       const res = await fetch(`${config.restEndpoint}/auth/forgot-password`, {
