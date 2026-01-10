@@ -119,7 +119,7 @@ export default function ReleaseVersionDetailPage() {
   }
 
   const renderLayout = (content: React.ReactNode) => (
-    <div className="flex h-screen overflow-hidden bg-white w-full">
+    <div className="flex overflow-hidden bg-white w-full">
       <Sidebar 
         filters={{
           vulnerabilityScore: selectedSeverities,
@@ -238,7 +238,7 @@ export default function ReleaseVersionDetailPage() {
   const dependencyCount = release.dependency_count ?? 0
 
   return (
-    <div className="flex h-screen overflow-hidden bg-white w-full">
+    <div className="flex overflow-hidden bg-white w-full">
       <Sidebar 
         filters={{
           vulnerabilityScore: selectedSeverities,
@@ -254,7 +254,7 @@ export default function ReleaseVersionDetailPage() {
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         <SyncedEndpoints isOpen={isEndpointsModalOpen} onClose={() => setIsEndpointsModalOpen(false)} releaseName={release.name} releaseVersion={release.version} />
 
-        <main className="flex-1 p-6 space-y-6">
+        <main className="p-6 space-y-6">
           
           <div className="flex items-center gap-4 mb-6">
               <button

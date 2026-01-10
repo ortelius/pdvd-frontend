@@ -197,7 +197,7 @@ export default function EndpointDetailPage() {
     endpoint.total_vulnerabilities.low
 
   return (
-    <div className="flex h-screen overflow-hidden bg-white w-full">
+    <div className="flex overflow-hidden bg-white w-full">
       <Sidebar 
         filters={{
           vulnerabilityScore: filters.selectedSeverities,

@@ -378,7 +378,7 @@ export default function SearchResults({ query, category, filters }: SearchResult
   }
 
   return (
-    <div className="px-6 py-6 flex-1">
+    <div className="px-6 py-6 flex-1 overflow-y-auto">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-semibold text-gray-900">
