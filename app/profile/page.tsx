@@ -10,6 +10,8 @@ import { useTheme } from '@/context/ThemeContext'
 // Icons
 import BusinessIcon from '@mui/icons-material/Business'
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser'
+import EmailIcon from '@mui/icons-material/Email'
+import PersonIcon from '@mui/icons-material/Person'
 
 export default function ProfilePage() {
   const { user } = useAuth()
@@ -25,7 +27,6 @@ export default function ProfilePage() {
   const [message, setMessage] = useState('')
 
   useEffect(() => {
-    // If user is explicitly null (not loading), redirect to login
     if (user === null) {
        router.push('/')
     }
@@ -111,20 +112,32 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <p className={`text-lg font-medium ${textClass}`}>{user.username}</p>
-                  <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full uppercase mt-1 inline-block ${
-                    isDark ? 'bg-blue-900/30 text-blue-300 border border-blue-800' : 'bg-blue-100 text-blue-800 border border-blue-200'
-                  }`}>
-                    {user.role}
-                  </span>
+                  <p className={`text-sm ${mutedClass}`}>{user.email}</p>
                 </div>
               </div>
 
               <div className="space-y-6">
-                <div>
-                  <label className={`text-xs uppercase font-semibold tracking-wider block mb-1 ${labelClass}`}>Username / Email</label>
-                  <p className={`text-base font-medium ${textClass}`}>{user.username}</p>
-                </div>
                 
+                {/* Username Row */}
+                <div className="flex items-start gap-3">
+                  <PersonIcon className={mutedClass} sx={{ fontSize: 20, marginTop: '2px' }} />
+                  <div>
+                    <label className={`text-xs uppercase font-semibold tracking-wider block mb-0.5 ${labelClass}`}>Username</label>
+                    <p className={`text-base font-medium ${textClass}`}>{user.username}</p>
+                  </div>
+                </div>
+
+                {/* Email Row */}
+                <div className="flex items-start gap-3">
+                  <EmailIcon className={mutedClass} sx={{ fontSize: 20, marginTop: '2px' }} />
+                  <div>
+                    <label className={`text-xs uppercase font-semibold tracking-wider block mb-0.5 ${labelClass}`}>Email Address</label>
+                    <p className={`text-base font-medium ${textClass}`}>{user.email || 'No email provided'}</p>
+                  </div>
+                </div>
+
+                <div className={`border-t my-4 ${isDark ? 'border-[#30363d]' : 'border-gray-100'}`}></div>
+
                 {/* Organization List Section */}
                 <div>
                   <label className={`text-xs uppercase font-semibold tracking-wider block mb-3 ${labelClass}`}>Organizations & Access</label>

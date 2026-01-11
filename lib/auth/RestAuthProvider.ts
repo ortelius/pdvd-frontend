@@ -46,6 +46,8 @@ export class RestAuthProvider implements AuthProvider {
       if (res.ok) {
         const data = await res.json()
         const username = (typeof data.username === 'string' && data.username.length > 0) ? data.username : 'unknown'
+        const email = (typeof data.email === 'string') ? data.email : '' // Extract email
+        
         let role: 'owner' | 'admin' | 'editor' | 'viewer' = 'viewer'
         if (typeof data.role === 'string') {
           const roleStr: string = data.role
@@ -54,14 +56,9 @@ export class RestAuthProvider implements AuthProvider {
           }
         }
         
-        // Extract orgs from response, default to empty array
         const orgs = Array.isArray(data.orgs) ? data.orgs : []
 
-        return {
-          username,
-          role,
-          orgs
-        }
+        return { username, email, role, orgs }
       }
       return null
     } catch (error) {
@@ -89,13 +86,13 @@ export class RestAuthProvider implements AuthProvider {
           : (typeof credentials.username === 'string' && credentials.username.length > 0)
               ? credentials.username
               : 'unknown'
+        const email = (typeof data.email === 'string') ? data.email : '' // Extract email
         const role = (typeof data.role === 'string' && data.role.length > 0) ? data.role : 'viewer'
-        
-        // Extract orgs from response
         const orgs = Array.isArray(data.orgs) ? data.orgs : []
 
         return {
           username,
+          email,
           role: role as 'owner' | 'admin' | 'editor' | 'viewer',
           orgs
         }

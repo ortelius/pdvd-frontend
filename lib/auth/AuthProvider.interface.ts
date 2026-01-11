@@ -2,8 +2,9 @@
 
 export interface User {
   username: string
+  email: string   // Added email
   role: 'owner' | 'admin' | 'editor' | 'viewer'
-  orgs: string[] // Added orgs array
+  orgs: string[]
 }
 
 export interface AuthProvider {
