@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { useTheme } from '@/context/ThemeContext'
 import { useSidebar } from '@/context/SidebarContext'
 import { useOrg } from '@/context/OrgContext'
+import { useAuth } from '@/context/AuthContext'
 
 // Material UI Icons
 import DashboardIcon from '@mui/icons-material/Dashboard'
@@ -24,6 +25,7 @@ export default function TopNavigation() {
   const { isDark, toggleTheme } = useTheme()
   const { toggleSidebar } = useSidebar()
   const { selectedOrg, setSelectedOrg } = useOrg()
+  const { user, isLoading } = useAuth() // Added auth hook
 
   const isActive = (path: string) => {
     return pathname === path
@@ -101,144 +103,181 @@ export default function TopNavigation() {
 
   const breadcrumbs = generateBreadcrumbs()
 
-  return (
-    <nav 
-      className="flex-shrink-0"
-      style={{ backgroundColor: isDark ? '#161b22' : '#f9fafb' }}
-    >
-      <div className="flex items-center justify-between h-12 px-4">
-        <div className="flex items-center gap-3 flex-1 min-w-0 overflow-x-auto">
-          <button
-            onClick={toggleSidebar}
-            className={`p-1.5 rounded-md transition-colors focus:outline-none ${
-              isDark 
-                ? 'text-gray-300 bg-[#21262d] hover:bg-[#30363d] hover:text-white' 
-                : 'text-gray-700 bg-gray-100 hover:bg-gray-200 hover:text-gray-900'
-            }`}
-            title="Toggle Sidebar"
-          >
-            <MenuIcon sx={{ fontSize: 20 }} />
-          </button>
+  // Only show banner if not loading and no user logged in
+  const showBanner = !isLoading && !user;
 
-          <Link href="/dashboard" className="flex items-center gap-2 flex-shrink-0">
-            <img src="/logo.svg" alt="Ortelius" className="h-7 w-7 object-contain" />
-          </Link>
-            
-            <Link
-              href="/"
-              onClick={() => setSelectedOrg(null)}
-              className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+  return (
+    <div className="flex flex-col flex-shrink-0 z-50 shadow-sm relative">
+      <nav 
+        className="flex-shrink-0"
+        style={{ backgroundColor: isDark ? '#161b22' : '#f9fafb' }}
+      >
+        <div className="flex items-center justify-between h-12 px-4">
+          <div className="flex items-center gap-3 flex-1 min-w-0 overflow-x-auto">
+            <button
+              onClick={toggleSidebar}
+              className={`p-1.5 rounded-md transition-colors focus:outline-none ${
                 isDark 
                   ? 'text-gray-300 bg-[#21262d] hover:bg-[#30363d] hover:text-white' 
                   : 'text-gray-700 bg-gray-100 hover:bg-gray-200 hover:text-gray-900'
               }`}
-              title="Switch Organization"
+              title="Toggle Sidebar"
             >
-              <AccountTreeIcon sx={{ fontSize: 18 }} />
-              <span>Switch Org</span>
+              <MenuIcon sx={{ fontSize: 20 }} />
+            </button>
+
+            <Link href="/dashboard" className="flex items-center gap-2 flex-shrink-0">
+              <img src="/logo.svg" alt="Ortelius" className="h-7 w-7 object-contain" />
             </Link>
-            
-            {breadcrumbs.length > 1 && (
-              <div className="flex items-center gap-2">
-                {breadcrumbs.slice(1).map((crumb, index) => {
-                  const isLast = index === breadcrumbs.length - 2 
-                  const isClickable = CLICKABLE_LABELS.has(crumb.label)
-
-                  return (
-                    <React.Fragment key={crumb.path + index}>
-                      {index > 0 && (
-                        <ChevronRightIcon 
-                          sx={{ fontSize: 16 }} 
-                          className="text-gray-400 dark:text-gray-600 flex-shrink-0" 
-                        />
-                      )}
-                      
-                      {isClickable ? (
-                        <Link
-                          href={crumb.path}
-                          className={`text-sm font-semibold whitespace-nowrap ${
-                            isLast
-                              ? 'text-gray-900 dark:text-[#e6edf3]'
-                              : 'text-blue-600 dark:text-[#58a6ff] hover:underline'
-                          }`}
-                        >
-                          {crumb.label}
-                        </Link>
-                      ) : (
-                        <span className="text-sm font-semibold whitespace-nowrap text-gray-900 dark:text-[#e6edf3] cursor-default">
-                          {crumb.label}
-                        </span>
-                      )}
-                    </React.Fragment>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <button
-            onClick={toggleTheme}
-            className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#21262d] hover:text-gray-700 dark:hover:text-[#e6edf3] focus:outline-none transition-colors"
-            title={isDark ? "Light Mode" : "Dark Mode"}
-          >
-            {isDark ? <LightModeIcon sx={{ fontSize: 20 }} /> : <DarkModeIcon sx={{ fontSize: 20 }} />}
-          </button>
-        </div>
-      </div>
-
-      <div className="flex items-center h-16 pl-[100px] pr-4 overflow-x-auto border-t border-gray-200 dark:border-gray-800">
-        <div className="flex items-center gap-1 h-full">
-          {contextNavItems.map((item) => {
-            const Icon = item.icon
-            const active = isActive(item.path)
-            const isDisabled = !selectedOrg
-
-            return isDisabled ? (
-              <div
-                key={item.path}
-                className={`
-                  flex items-center gap-2 px-4 h-full text-sm font-medium border-b-2 whitespace-nowrap
-                  border-transparent text-gray-400 dark:text-gray-700 cursor-not-allowed opacity-50
-                `}
-                title="Select an organization to enable"
-              >
-                <Icon sx={{ fontSize: 18 }} />
-                <div className="flex flex-col items-start leading-tight">
-                  <span>{item.label}</span>
-                  {item.tagline && (
-                    <span className="text-[10px] font-normal opacity-60">
-                      {item.tagline}
-                    </span>
-                  )}
-                </div>
-              </div>
-            ) : (
+              
               <Link
-                key={item.path}
-                href={item.path}
-                className={`
-                  flex items-center gap-2 px-4 h-full text-sm font-medium border-b-2 transition-colors whitespace-nowrap
-                  ${active 
-                    ? 'border-blue-600 dark:border-[#58a6ff] text-gray-900 dark:text-[#e6edf3]' 
-                    : 'border-transparent text-gray-600 dark:text-[#7d8590] hover:text-gray-900 dark:hover:text-[#e6edf3] hover:border-gray-300 dark:hover:border-[#30363d]'
-                  }
-                `}
+                href="/"
+                onClick={() => setSelectedOrg(null)}
+                className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                  isDark 
+                    ? 'text-gray-300 bg-[#21262d] hover:bg-[#30363d] hover:text-white' 
+                    : 'text-gray-700 bg-gray-100 hover:bg-gray-200 hover:text-gray-900'
+                }`}
+                title="Switch Organization"
               >
-                <Icon sx={{ fontSize: 18 }} />
-                <div className="flex flex-col items-start leading-tight">
-                  <span>{item.label}</span>
-                  {item.tagline && (
-                    <span className="text-[10px] font-normal opacity-60">
-                      {item.tagline}
-                    </span>
-                  )}
-                </div>
+                <AccountTreeIcon sx={{ fontSize: 18 }} />
+                <span>Switch Org</span>
               </Link>
-            )
-          })}
+              
+              {breadcrumbs.length > 1 && (
+                <div className="flex items-center gap-2">
+                  {breadcrumbs.slice(1).map((crumb, index) => {
+                    const isLast = index === breadcrumbs.length - 2 
+                    const isClickable = CLICKABLE_LABELS.has(crumb.label)
+
+                    return (
+                      <React.Fragment key={crumb.path + index}>
+                        {index > 0 && (
+                          <ChevronRightIcon 
+                            sx={{ fontSize: 16 }} 
+                            className="text-gray-400 dark:text-gray-600 flex-shrink-0" 
+                          />
+                        )}
+                        
+                        {isClickable ? (
+                          <Link
+                            href={crumb.path}
+                            className={`text-sm font-semibold whitespace-nowrap ${
+                              isLast
+                                ? 'text-gray-900 dark:text-[#e6edf3]'
+                                : 'text-blue-600 dark:text-[#58a6ff] hover:underline'
+                            }`}
+                          >
+                            {crumb.label}
+                          </Link>
+                        ) : (
+                          <span className="text-sm font-semibold whitespace-nowrap text-gray-900 dark:text-[#e6edf3] cursor-default">
+                            {crumb.label}
+                          </span>
+                        )}
+                      </React.Fragment>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={toggleTheme}
+              className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#21262d] hover:text-gray-700 dark:hover:text-[#e6edf3] focus:outline-none transition-colors"
+              title={isDark ? "Light Mode" : "Dark Mode"}
+            >
+              {isDark ? <LightModeIcon sx={{ fontSize: 20 }} /> : <DarkModeIcon sx={{ fontSize: 20 }} />}
+            </button>
+          </div>
         </div>
-      </div>
-    </nav>
+
+        <div className="flex items-center h-16 pl-[100px] pr-4 overflow-x-auto border-t border-gray-200 dark:border-gray-800">
+          <div className="flex items-center gap-1 h-full">
+            {contextNavItems.map((item) => {
+              const Icon = item.icon
+              const active = isActive(item.path)
+              const isDisabled = !selectedOrg
+
+              return isDisabled ? (
+                <div
+                  key={item.path}
+                  className={`
+                    flex items-center gap-2 px-4 h-full text-sm font-medium border-b-2 whitespace-nowrap
+                    border-transparent text-gray-400 dark:text-gray-700 cursor-not-allowed opacity-50
+                  `}
+                  title="Select an organization to enable"
+                >
+                  <Icon sx={{ fontSize: 18 }} />
+                  <div className="flex flex-col items-start leading-tight">
+                    <span>{item.label}</span>
+                    {item.tagline && (
+                      <span className="text-[10px] font-normal opacity-60">
+                        {item.tagline}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <Link
+                  key={item.path}
+                  href={item.path}
+                  className={`
+                    flex items-center gap-2 px-4 h-full text-sm font-medium border-b-2 transition-colors whitespace-nowrap
+                    ${active 
+                      ? 'border-blue-600 dark:border-[#58a6ff] text-gray-900 dark:text-[#e6edf3]' 
+                      : 'border-transparent text-gray-600 dark:text-[#7d8590] hover:text-gray-900 dark:hover:text-[#e6edf3] hover:border-gray-300 dark:hover:border-[#30363d]'
+                    }
+                  `}
+                >
+                  <Icon sx={{ fontSize: 18 }} />
+                  <div className="flex flex-col items-start leading-tight">
+                    <span>{item.label}</span>
+                    {item.tagline && (
+                      <span className="text-[10px] font-normal opacity-60">
+                        {item.tagline}
+                      </span>
+                    )}
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+      </nav>
+
+      {/* Integrated Public Data Notice Banner */}
+      {showBanner && (
+        <div 
+          className={`
+            w-full py-2 px-4 text-center text-sm font-medium transition-colors border-t
+            ${isDark 
+              ? 'bg-blue-900/30 text-blue-200 border-blue-800' 
+              : 'bg-blue-50 text-blue-800 border-blue-100'
+            }
+          `}
+          role="alert"
+        >
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-3 leading-tight">
+            <span className="flex items-center gap-2">
+              <span className="text-lg">🌍</span>
+              <span>You are viewing public open source repositories.</span>
+            </span>
+            <span className="hidden sm:inline text-blue-400/50">|</span>
+            <span className="whitespace-nowrap">
+              <Link href="/" className="font-bold underline hover:no-underline decoration-2 underline-offset-2">
+                Sign In
+              </Link>
+              {' or '}
+              <Link href="/auth/signup" className="font-bold underline hover:no-underline decoration-2 underline-offset-2">
+                Sign Up
+              </Link>
+              {' to see your organization data.'}
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }

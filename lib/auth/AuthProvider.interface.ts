@@ -2,7 +2,8 @@
 
 export interface User {
   username: string
-  role: 'admin' | 'editor' | 'viewer'
+  role: 'owner' | 'admin' | 'editor' | 'viewer'
+  orgs: string[] // Added orgs array
 }
 
 export interface AuthProvider {

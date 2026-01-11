@@ -46,16 +46,21 @@ export class RestAuthProvider implements AuthProvider {
       if (res.ok) {
         const data = await res.json()
         const username = (typeof data.username === 'string' && data.username.length > 0) ? data.username : 'unknown'
-        let role: 'admin' | 'editor' | 'viewer' = 'viewer'
+        let role: 'owner' | 'admin' | 'editor' | 'viewer' = 'viewer'
         if (typeof data.role === 'string') {
           const roleStr: string = data.role
           if (roleStr.length > 0) {
-            role = roleStr as 'admin' | 'editor' | 'viewer'
+            role = roleStr as 'owner' | 'admin' | 'editor' | 'viewer'
           }
         }
+        
+        // Extract orgs from response, default to empty array
+        const orgs = Array.isArray(data.orgs) ? data.orgs : []
+
         return {
           username,
-          role
+          role,
+          orgs
         }
       }
       return null
@@ -85,9 +90,14 @@ export class RestAuthProvider implements AuthProvider {
               ? credentials.username
               : 'unknown'
         const role = (typeof data.role === 'string' && data.role.length > 0) ? data.role : 'viewer'
+        
+        // Extract orgs from response
+        const orgs = Array.isArray(data.orgs) ? data.orgs : []
+
         return {
           username,
-          role: role as 'admin' | 'editor' | 'viewer'
+          role: role as 'owner' | 'admin' | 'editor' | 'viewer',
+          orgs
         }
       }
       return null
