@@ -47,7 +47,7 @@ export class RestAuthProvider implements AuthProvider {
         const data = await res.json()
         const username = (typeof data.username === 'string' && data.username.length > 0) ? data.username : 'unknown'
         const email = (typeof data.email === 'string') ? data.email : '' // Extract email
-        
+
         let role: 'owner' | 'admin' | 'editor' | 'viewer' = 'viewer'
         if (typeof data.role === 'string') {
           const roleStr: string = data.role
@@ -55,7 +55,7 @@ export class RestAuthProvider implements AuthProvider {
             role = roleStr as 'owner' | 'admin' | 'editor' | 'viewer'
           }
         }
-        
+
         const orgs = Array.isArray(data.orgs) ? data.orgs : []
 
         return { username, email, role, orgs }

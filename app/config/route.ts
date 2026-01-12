@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-export async function GET(request: NextRequest) {
+export async function GET (request: NextRequest): Promise<NextResponse> {
   const graphqlEndpoint =
     process.env.RUNTIME_GRAPHQL_ENDPOINT !== undefined
       ? process.env.RUNTIME_GRAPHQL_ENDPOINT

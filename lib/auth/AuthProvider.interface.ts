@@ -2,7 +2,7 @@
 
 export interface User {
   username: string
-  email: string   // Added email
+  email: string // Added email
   role: 'owner' | 'admin' | 'editor' | 'viewer'
   orgs: string[]
 }
