@@ -38,6 +38,7 @@ export class RestAuthProvider implements AuthProvider {
     return this.restEndpoint
   }
 
+
   async checkSession (): Promise<User | null> {
     try {
       const endpoint = await this.ensureInitialized()
