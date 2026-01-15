@@ -38,7 +38,6 @@ export class RestAuthProvider implements AuthProvider {
     return this.restEndpoint
   }
 
-
   async checkSession (): Promise<User | null> {
     try {
       const endpoint = await this.ensureInitialized()
@@ -74,7 +73,7 @@ export class RestAuthProvider implements AuthProvider {
   async login (credentials: LoginCredentials): Promise<User | null> {
     try {
       const endpoint = await this.ensureInitialized()
-      // [SECURE] We do not handle the token manually. 
+      // [SECURE] We do not handle the token manually.
       // The backend sets the HttpOnly cookie, which the browser automatically stores.
       const res = await fetch(`${endpoint}/auth/login`, {
         method: 'POST',
@@ -115,7 +114,7 @@ export class RestAuthProvider implements AuthProvider {
     try {
       const endpoint = await this.ensureInitialized()
       // Send credentials to allow backend to clear cookie
-      await fetch(`${endpoint}/auth/logout`, { 
+      await fetch(`${endpoint}/auth/logout`, {
         method: 'POST',
         credentials: 'include'
       })
@@ -124,9 +123,9 @@ export class RestAuthProvider implements AuthProvider {
     } finally {
       // Explicitly clear cookies on the client side to ensure no stale JWTs remain
       if (typeof document !== 'undefined') {
-        document.cookie.split(";").forEach((c) => {
-          document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/");
-        });
+        document.cookie.split(';').forEach((c) => {
+          document.cookie = c.replace(/^ +/, '').replace(/=.*/, '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/')
+        })
       }
     }
   }

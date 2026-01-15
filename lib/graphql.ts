@@ -38,11 +38,11 @@ async function getGraphqlEndpoint (): Promise<string> {
 
 export async function graphqlQuery<T> (query: string, variables?: Record<string, any>): Promise<T> {
   const endpoint = await getGraphqlEndpoint()
-  
+
   // [SECURE] We rely on the browser to send the HttpOnly cookie via credentials: 'include'.
   // We do NOT manually attach an Authorization header.
-  
-  let response;
+
+  let response
   try {
     response = await fetch(endpoint, {
       method: 'POST',
