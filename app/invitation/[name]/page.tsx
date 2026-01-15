@@ -76,6 +76,7 @@ export default function ActivationPage() {
       const res = await fetch(`${restEndpoint}/invitation/${encodeURIComponent(token)}/accept`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Ensure cookies from the response are accepted
         body: JSON.stringify({ 
           token, // Send raw token (with = sign)
           password, 

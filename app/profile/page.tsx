@@ -51,6 +51,7 @@ export default function ProfilePage() {
       const res = await fetch(`${restEndpoint}/auth/change-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Ensure cookies are sent
         body: JSON.stringify({
           old_password: passwordData.oldPassword,
           new_password: passwordData.newPassword

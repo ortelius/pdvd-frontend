@@ -6,6 +6,7 @@ import Sidebar from '@/components/Sidebar'
 import { graphqlQuery, GET_ORG_AGGREGATED_RELEASES } from '@/lib/graphql'
 import { GetOrgAggregatedReleasesResponse, OrgAggregatedRelease } from '@/lib/types'
 import { useOrg } from '@/context/OrgContext'
+import { useAuth } from '@/context/AuthContext' // Added import
 import MainLayoutWrapper from '@/components/MainLayoutWrapper'
 
 // Icons
@@ -17,6 +18,7 @@ import HubIcon from '@mui/icons-material/Hub'
 export default function ProjectsPage() {
   const router = useRouter()
   const { setSelectedOrg } = useOrg()
+  const { user } = useAuth() // Access auth state
   const [data, setData] = useState<OrgAggregatedRelease[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -25,6 +27,7 @@ export default function ProjectsPage() {
     const fetchProjects = async () => {
       try {
         setLoading(true)
+        // Fetches orgs based on user context (cookies) or public data if guest
         const response = await graphqlQuery<GetOrgAggregatedReleasesResponse>(
           GET_ORG_AGGREGATED_RELEASES,
           { severity: 'NONE' }
@@ -38,7 +41,7 @@ export default function ProjectsPage() {
       }
     }
     fetchProjects()
-  }, [])
+  }, [user]) // Dependency added: Re-run fetch when user logs in/out
 
   const handleOrgClick = (orgName: string) => {
     setSelectedOrg(orgName)
@@ -62,6 +65,14 @@ export default function ProjectsPage() {
           ) : error ? (
             <div className="p-4 bg-red-50 text-red-800 rounded-lg">
               {error}
+            </div>
+          ) : data.length === 0 ? (
+            <div className="text-center py-12 bg-white rounded-xl border border-gray-200 border-dashed">
+              <BusinessIcon className="mx-auto h-12 w-12 text-gray-300" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900">No organizations found</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                You are not associated with any organizations that have visible releases.
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

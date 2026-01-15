@@ -51,10 +51,21 @@ export default function AuthWrapper({ children, provider }: AuthWrapperProps) {
   // 3. Logout Logic
   const logout = async () => {
     try {
+      // 1. Notify provider/backend to invalidate session
       await authProvider.logout()
+      
+      // 2. Clear application state artifacts
+      localStorage.removeItem('ortelius_selected_org')
+      
+      // 3. Reset React State
       setUser(null)
+
+      // 4. Force a hard redirect to root to clear memory/context completely
+      window.location.href = '/'
     } catch (error) {
       console.error('Logout error', error)
+      // Ensure redirect happens even if the API call fails
+      window.location.href = '/'
     }
   }
 

@@ -42,12 +42,15 @@ export class RestAuthProvider implements AuthProvider {
   async checkSession (): Promise<User | null> {
     try {
       const endpoint = await this.ensureInitialized()
-      const res = await fetch(`${endpoint}/auth/me`)
+      // Send credentials to check cookie validity
+      const res = await fetch(`${endpoint}/auth/me`, {
+        credentials: 'include'
+      })
 
       if (res.ok) {
         const data = await res.json()
         const username = (typeof data.username === 'string' && data.username.length > 0) ? data.username : 'unknown'
-        const email = (typeof data.email === 'string') ? data.email : '' // Extract email
+        const email = (typeof data.email === 'string') ? data.email : ''
 
         let role: 'owner' | 'admin' | 'editor' | 'viewer' = 'viewer'
         if (typeof data.role === 'string') {
@@ -71,9 +74,12 @@ export class RestAuthProvider implements AuthProvider {
   async login (credentials: LoginCredentials): Promise<User | null> {
     try {
       const endpoint = await this.ensureInitialized()
+      // [SECURE] We do not handle the token manually. 
+      // The backend sets the HttpOnly cookie, which the browser automatically stores.
       const res = await fetch(`${endpoint}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Ensure Set-Cookie is accepted
         body: JSON.stringify({
           username: credentials.username,
           password: credentials.password
@@ -87,7 +93,7 @@ export class RestAuthProvider implements AuthProvider {
           : (typeof credentials.username === 'string' && credentials.username.length > 0)
               ? credentials.username
               : 'unknown'
-        const email = (typeof data.email === 'string') ? data.email : '' // Extract email
+        const email = (typeof data.email === 'string') ? data.email : ''
         const role = (typeof data.role === 'string' && data.role.length > 0) ? data.role : 'viewer'
         const orgs = Array.isArray(data.orgs) ? data.orgs : []
 
@@ -108,9 +114,20 @@ export class RestAuthProvider implements AuthProvider {
   async logout (): Promise<void> {
     try {
       const endpoint = await this.ensureInitialized()
-      await fetch(`${endpoint}/auth/logout`, { method: 'POST' })
+      // Send credentials to allow backend to clear cookie
+      await fetch(`${endpoint}/auth/logout`, { 
+        method: 'POST',
+        credentials: 'include'
+      })
     } catch (error) {
       console.error('Logout error', error)
+    } finally {
+      // Explicitly clear cookies on the client side to ensure no stale JWTs remain
+      if (typeof document !== 'undefined') {
+        document.cookie.split(";").forEach((c) => {
+          document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/");
+        });
+      }
     }
   }
 }

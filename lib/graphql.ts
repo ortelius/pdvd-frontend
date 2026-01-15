@@ -19,7 +19,7 @@ async function getGraphqlEndpoint (): Promise<string> {
 
     if (!res.ok || !isJson) {
       console.warn(`Failed to fetch /config (Status: ${res.status}). Falling back to default.`)
-      return '/api/v1/graphql'
+      return 'http://localhost:3000/api/v1/graphql'
     }
 
     const data = await res.json()
@@ -32,25 +32,38 @@ async function getGraphqlEndpoint (): Promise<string> {
   } catch (error) {
     console.error('Error fetching GraphQL config:', error)
   }
-  return '/api/v1/graphql'
+  // Default fallback if config fails
+  return 'http://localhost:3000/api/v1/graphql'
 }
 
 export async function graphqlQuery<T> (query: string, variables?: Record<string, any>): Promise<T> {
   const endpoint = await getGraphqlEndpoint()
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      query,
-      variables
+  
+  // [SECURE] We rely on the browser to send the HttpOnly cookie via credentials: 'include'.
+  // We do NOT manually attach an Authorization header.
+  
+  let response;
+  try {
+    response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include', // Ensure cookies are sent with the request
+      body: JSON.stringify({
+        query,
+        variables
+      })
     })
-  })
+  } catch (error) {
+    // Catch network errors (like "Failed to fetch") and log the endpoint being attempted
+    console.error(`GraphQL Network Error: Failed to connect to ${endpoint}`, error)
+    throw error
+  }
 
   if (!response.ok) {
     // If endpoint is incorrect (e.g. results in a 404 HTML page), this throws the "Not Found" error
-    throw new Error(`GraphQL request failed: ${response.statusText}`)
+    throw new Error(`GraphQL request failed: ${response.statusText} (${response.status})`)
   }
 
   const json = await response.json()
