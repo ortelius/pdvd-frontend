@@ -36,8 +36,8 @@ export default function TopNavigation() {
     { label: 'Dashboard', icon: DashboardIcon, path: '/dashboard', tagline: '(The Posture)' },
     { label: 'Synced Endpoints', icon: HubIcon, path: '/endpoints', tagline: "(Where It's Running)" },
     { label: 'Project Releases', icon: Inventory2Icon, path: '/releases', tagline: '(Where to Fix It)' },
-    { label: 'Mitigations', icon: BuildIcon, path: '/mitigations', tagline: '(How to Fix It)' },
-    { label: 'Vulnerabilities', icon: ThreatIntelligence, path: '/vulnerabilities', tagline: '(The Threat)' },
+    { label: 'Mitigations', icon: BuildIcon, path: '/mitigations', tagline: '(How to Fix It)', hidden: true },
+    { label: 'Vulnerabilities', icon: ThreatIntelligence, path: '/vulnerabilities', tagline: '(The Threat)', hidden: true },
   ]
 
   // Define which labels constitute "List Pages" that should be clickable
@@ -199,6 +199,11 @@ export default function TopNavigation() {
               const Icon = item.icon
               const active = isActive(item.path)
               const isDisabled = !selectedOrg
+              const isHidden = item.hidden === true
+
+              if (isHidden) {
+                return null
+              }
 
               return isDisabled ? (
                 <div

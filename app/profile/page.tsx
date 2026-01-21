@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
-import MainLayoutWrapper from '@/components/MainLayoutWrapper'
 import { useAuth } from '@/context/AuthContext'
 import { useTheme } from '@/context/ThemeContext'
 
@@ -12,6 +11,8 @@ import BusinessIcon from '@mui/icons-material/Business'
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser'
 import EmailIcon from '@mui/icons-material/Email'
 import PersonIcon from '@mui/icons-material/Person'
+import GitHubIcon from '@mui/icons-material/GitHub'
+import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 
 export default function ProfilePage() {
   const { user } = useAuth()
@@ -25,14 +26,59 @@ export default function ProfilePage() {
   })
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
   const [message, setMessage] = useState('')
+  
+  // GitHub Integration State
+  const [githubConnected, setGithubConnected] = useState(false)
+  const [repos, setRepos] = useState<any[]>([])
+  const [loadingRepos, setLoadingRepos] = useState(false)
 
   useEffect(() => {
     if (user === null) {
        router.push('/')
+    } else {
+        fetchProfile()
     }
   }, [user, router])
 
-  if (!user) return null
+  const fetchProfile = async () => {
+      try {
+          const configRes = await fetch('/config')
+          const config = await configRes.json()
+          const restEndpoint = config.restEndpoint || 'http://localhost:3000/api/v1'
+          
+          const res = await fetch(`${restEndpoint}/auth/me`, { credentials: 'include' })
+          if (res.ok) {
+              const data = await res.json()
+              let isConnected = !!data.github_connected
+              
+              // Verify the connection is actually usable by trying to fetch repos
+              if (isConnected) {
+                  try {
+                      const reposRes = await fetch(`${restEndpoint}/github/repos`, { credentials: 'include' })
+                      if (reposRes.ok) {
+                          const reposData = await reposRes.json()
+                          // STRICT CHECK: If there are no repos and no error, or if an explicit error exists,
+                          // the connection is effectively dead/revoked.
+                          if (reposData.error || (Array.isArray(reposData) && reposData.length === 0)) {
+                              isConnected = false
+                          } else {
+                              setRepos(reposData)
+                          }
+                      } else {
+                          // HTTP error from /repos implies invalid token/session
+                          isConnected = false
+                      }
+                  } catch (e) {
+                      isConnected = false
+                  }
+              }
+              setGithubConnected(isConnected)
+          }
+      } catch (e) {
+          console.error("Failed to fetch profile", e)
+          setGithubConnected(false)
+      }
+  }
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -51,7 +97,7 @@ export default function ProfilePage() {
       const res = await fetch(`${restEndpoint}/auth/change-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', // Ensure cookies are sent
+        credentials: 'include',
         body: JSON.stringify({
           old_password: passwordData.oldPassword,
           new_password: passwordData.newPassword
@@ -71,6 +117,36 @@ export default function ProfilePage() {
       setMessage(err.message)
     }
   }
+
+  const handleConnectGitHub = async () => {
+      const configRes = await fetch('/config')
+      const config = await configRes.json()
+      const restEndpoint = config.restEndpoint || 'http://localhost:3000/api/v1'
+      window.location.href = `${restEndpoint}/auth/github/login`
+  }
+
+  const fetchRepos = async () => {
+      setLoadingRepos(true)
+      try {
+          const configRes = await fetch('/config')
+          const config = await configRes.json()
+          const restEndpoint = config.restEndpoint || 'http://localhost:3000/api/v1'
+          
+          const res = await fetch(`${restEndpoint}/github/repos`, { credentials: 'include' })
+          if (res.ok) {
+              const data = await res.json()
+              if (!data.error) {
+                setRepos(data)
+              }
+          }
+      } catch (e) {
+          console.error(e)
+      } finally {
+          setLoadingRepos(false)
+      }
+  }
+
+  if (!user) return null
 
   // --- Dynamic Theme Styles ---
   const pageBackground = isDark ? 'bg-[#0d1117]' : 'bg-gray-50'
@@ -92,17 +168,17 @@ export default function ProfilePage() {
   const mutedClass = isDark ? "text-[#8b949e]" : "text-gray-500"
 
   return (
-    <div className="flex h-screen overflow-hidden w-full">
+    <div className="flex overflow-hidden w-full" style={{ backgroundColor: isDark ? '#0d1117' : '#ffffff' }}>
       <Sidebar />
-      <MainLayoutWrapper>
-        <div className={`flex-1 px-8 py-8 overflow-y-auto ${pageBackground} min-h-full`}>
+      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+        <div className={`px-8 pt-8 pb-16 ${pageBackground}`}>
           <h1 className={`text-3xl font-bold mb-8 ${headingClass}`}>User Profile</h1>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 auto-rows-auto">
             
             {/* 1. Account Details Card */}
             <div 
-              className="p-6 rounded-xl border shadow-sm transition-colors flex flex-col h-full"
+              className="p-6 rounded-xl border shadow-sm transition-colors flex flex-col"
               style={cardStyle}
             >
               <h2 className={`text-xl font-semibold mb-6 ${headingClass}`}>Account Details</h2>
@@ -118,8 +194,6 @@ export default function ProfilePage() {
               </div>
 
               <div className="space-y-6">
-                
-                {/* Username Row */}
                 <div className="flex items-start gap-3">
                   <PersonIcon className={mutedClass} sx={{ fontSize: 20, marginTop: '2px' }} />
                   <div>
@@ -128,7 +202,6 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {/* Email Row */}
                 <div className="flex items-start gap-3">
                   <EmailIcon className={mutedClass} sx={{ fontSize: 20, marginTop: '2px' }} />
                   <div>
@@ -139,10 +212,8 @@ export default function ProfilePage() {
 
                 <div className={`border-t my-4 ${isDark ? 'border-[#30363d]' : 'border-gray-100'}`}></div>
 
-                {/* Organization List Section */}
                 <div>
                   <label className={`text-xs uppercase font-semibold tracking-wider block mb-3 ${labelClass}`}>Organizations & Access</label>
-                  
                   {user.orgs && user.orgs.length > 0 ? (
                     <div className="space-y-2">
                       {user.orgs.map((org, idx) => (
@@ -180,7 +251,7 @@ export default function ProfilePage() {
 
             {/* 2. Change Password Card */}
             <div 
-              className="p-6 rounded-xl border shadow-sm transition-colors flex flex-col h-full"
+              className="p-6 rounded-xl border shadow-sm transition-colors flex flex-col"
               style={cardStyle}
             >
               <h2 className={`text-xl font-semibold mb-6 ${headingClass}`}>Change Password</h2>
@@ -239,9 +310,98 @@ export default function ProfilePage() {
                 </button>
               </form>
             </div>
+
+            {/* 3. GitHub Integration Card */}
+            <div 
+              className="p-6 rounded-xl border shadow-sm transition-colors flex flex-col lg:col-span-2 w-full"
+              style={cardStyle}
+            >
+              <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                      <GitHubIcon sx={{ fontSize: 28 }} className={isDark ? "text-white" : "text-gray-900"} />
+                      <h2 className={`text-xl font-semibold ${headingClass}`}>GitHub Integration</h2>
+                  </div>
+                  {!githubConnected ? (
+                      <button 
+                          onClick={handleConnectGitHub}
+                          className="px-4 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800 transition-colors text-sm font-medium"
+                      >
+                          Connect GitHub Account
+                      </button>
+                  ) : (
+                      <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold border border-green-200">
+                          Connected
+                      </span>
+                  )}
+              </div>
+
+              {githubConnected && (
+                  <div className="space-y-6">
+                      
+                      {/* --- INSTRUCTIONS SECTION START --- */}
+                      <div className={`p-4 rounded-lg text-sm border flex flex-col gap-2 ${isDark ? 'bg-blue-900/20 border-blue-800 text-blue-200' : 'bg-blue-50 border-blue-200 text-blue-800'}`}>
+                        <div className="flex items-center gap-2 font-semibold">
+                          <OpenInNewIcon sx={{ fontSize: 18 }} />
+                          How to add more repositories
+                        </div>
+                        <p className="opacity-90">
+                          To grant Ortelius access to additional repositories, you must configure the installation on GitHub directly:
+                        </p>
+                        <ol className="list-decimal list-inside space-y-1 ml-1 opacity-90">
+                          <li>Go to your <strong>GitHub Settings</strong> (or Organization Settings).</li>
+                          <li>Navigate to <strong>Applications</strong> &gt; <strong>Installed GitHub Apps</strong>.</li>
+                          <li>Click <strong>Configure</strong> next to the Ortelius/PDVD app.</li>
+                          <li>Scroll down to <strong>Repository access</strong> and select the desired repositories.</li>
+                        </ol>
+                        <a 
+                          href="https://github.com/settings/installations" 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="mt-2 text-sm font-bold hover:underline w-fit"
+                        >
+                          Open GitHub App Settings &rarr;
+                        </a>
+                      </div>
+                      {/* --- INSTRUCTIONS SECTION END --- */}
+
+                      {repos.length === 0 && !loadingRepos && (
+                          <button 
+                              onClick={fetchRepos}
+                              className="text-blue-600 hover:underline text-sm font-medium"
+                          >
+                              Refresh Repository List
+                          </button>
+                      )}
+
+                      {loadingRepos && <div className="text-sm text-gray-500">Loading repositories...</div>}
+
+                      {repos.length > 0 && (
+                          <div>
+                              <h3 className={`text-sm font-semibold mb-2 ${textClass}`}>Connected Repositories:</h3>
+                              <div className="border rounded-lg overflow-hidden max-h-64 overflow-y-auto" style={{ borderColor: isDark ? '#30363d' : '#e5e7eb' }}>
+                                  {repos.map(repo => (
+                                      <div 
+                                          key={repo.id} 
+                                          className={`p-3 flex items-center gap-3 border-b last:border-0 border-gray-100 dark:border-[#30363d]`}
+                                      >
+                                          <div className="flex items-center gap-2">
+                                              {/* Simple dot to indicate status */}
+                                              <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                                              <p className={`text-sm font-medium ${textClass}`}>{repo.full_name}</p>
+                                              {repo.private && <span className="text-[10px] bg-gray-200 text-gray-700 px-1.5 rounded ml-2">Private</span>}
+                                          </div>
+                                      </div>
+                                  ))}
+                              </div>
+                          </div>
+                      )}
+                  </div>
+              )}
+            </div>
+
           </div>
         </div>
-      </MainLayoutWrapper>
+      </div>
     </div>
   )
 }
