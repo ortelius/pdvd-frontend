@@ -324,12 +324,20 @@ export default function ProfilePage() {
                   {!githubConnected ? (
                       <button 
                           onClick={handleConnectGitHub}
-                          className="px-4 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800 transition-colors text-sm font-medium"
+                          className={`px-4 py-2 rounded-md transition-colors text-sm font-medium ${
+                            isDark
+                              ? 'bg-[#238636] text-white hover:bg-[#2ea043]'
+                              : 'bg-blue-600 text-white hover:bg-blue-700'
+                          }`}
                       >
                           Connect GitHub Account
                       </button>
                   ) : (
-                      <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold border border-green-200">
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
+                        isDark
+                          ? 'bg-green-900/20 text-green-400 border-green-900/50'
+                          : 'bg-green-100 text-green-800 border-green-200'
+                      }`}>
                           Connected
                       </span>
                   )}
