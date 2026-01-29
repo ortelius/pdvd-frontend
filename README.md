@@ -10,7 +10,7 @@ The Ortelius PDVD provides a production-grade security posture dashboard focused
 
 1. **Sign Up**: Click "Create New Account" on the login page and create an account with your organization details
    
-   ![Create New Account Link](./docs/create-account-link.png)
+   ![Create New Account Link](create-account.png)
 2. **Activate Account**: Check your email for the activation link and set your password
 3. **Connect GitHub**: 
    - Go to your Profile page
