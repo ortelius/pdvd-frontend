@@ -13,6 +13,8 @@ import EmailIcon from '@mui/icons-material/Email'
 import PersonIcon from '@mui/icons-material/Person'
 import GitHubIcon from '@mui/icons-material/GitHub'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
 
 export default function ProfilePage() {
   const { user } = useAuth()
@@ -29,6 +31,7 @@ export default function ProfilePage() {
   
   // GitHub Integration State
   const [githubConnected, setGithubConnected] = useState(false)
+  const [isGithubExpanded, setIsGithubExpanded] = useState(false) // Default to collapsed
   const [repos, setRepos] = useState<any[]>([])
   const [loadingRepos, setLoadingRepos] = useState(false)
 
@@ -118,7 +121,10 @@ export default function ProfilePage() {
     }
   }
 
-  const handleConnectGitHub = async () => {
+  const handleConnectGitHub = async (e: React.MouseEvent) => {
+      // Prevent accordion toggle when clicking the connect button
+      e.stopPropagation()
+
       const configRes = await fetch('/config')
       const config = await configRes.json()
       const restEndpoint = config.restEndpoint || 'http://localhost:3000/api/v1'
@@ -311,97 +317,124 @@ export default function ProfilePage() {
               </form>
             </div>
 
-            {/* 3. GitHub Integration Card */}
+            {/* 3. GitHub Integration Card - Collapsible */}
             <div 
-              className="p-6 rounded-xl border shadow-sm transition-colors flex flex-col lg:col-span-2 w-full"
-              style={cardStyle}
+              className={`rounded-xl border shadow-sm transition-colors flex flex-col lg:col-span-2 w-full overflow-hidden ${
+                isDark ? 'bg-[#161b22] border-[#30363d]' : 'bg-white border-gray-200'
+              }`}
             >
-              <div className="flex items-center justify-between mb-6">
+              {/* Collapsible Header */}
+              <div 
+                onClick={() => setIsGithubExpanded(!isGithubExpanded)}
+                className={`p-6 flex items-center justify-between cursor-pointer transition-colors ${
+                  isDark ? 'hover:bg-[#21262d]' : 'hover:bg-gray-50'
+                }`}
+              >
                   <div className="flex items-center gap-3">
                       <GitHubIcon sx={{ fontSize: 28 }} className={isDark ? "text-white" : "text-gray-900"} />
                       <h2 className={`text-xl font-semibold ${headingClass}`}>GitHub Integration</h2>
                   </div>
-                  {!githubConnected ? (
-                      <button 
-                          onClick={handleConnectGitHub}
-                          className={`px-4 py-2 rounded-md transition-colors text-sm font-medium ${
-                            isDark
-                              ? 'bg-[#238636] text-white hover:bg-[#2ea043]'
-                              : 'bg-blue-600 text-white hover:bg-blue-700'
-                          }`}
-                      >
-                          Connect GitHub Account
-                      </button>
-                  ) : (
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
-                        isDark
-                          ? 'bg-green-900/20 text-green-400 border-green-900/50'
-                          : 'bg-green-100 text-green-800 border-green-200'
-                      }`}>
-                          Connected
-                      </span>
-                  )}
+                  
+                  <div className="flex items-center gap-4">
+                    {!githubConnected ? (
+                        <button 
+                            onClick={handleConnectGitHub}
+                            className={`px-4 py-2 rounded-md transition-colors text-sm font-medium ${
+                              isDark
+                                ? 'bg-[#238636] text-white hover:bg-[#2ea043]'
+                                : 'bg-blue-600 text-white hover:bg-blue-700'
+                            }`}
+                        >
+                            Connect GitHub Account
+                        </button>
+                    ) : (
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
+                          isDark
+                            ? 'bg-green-900/20 text-green-400 border-green-900/50'
+                            : 'bg-green-100 text-green-800 border-green-200'
+                        }`}>
+                            Connected
+                        </span>
+                    )}
+
+                    {isGithubExpanded ? (
+                      <KeyboardArrowUpIcon className={mutedClass} />
+                    ) : (
+                      <KeyboardArrowDownIcon className={mutedClass} />
+                    )}
+                  </div>
               </div>
 
-              {githubConnected && (
-                  <div className="space-y-6">
-                      
-                      {/* --- INSTRUCTIONS SECTION START --- */}
-                      <div className={`p-4 rounded-lg text-sm border flex flex-col gap-2 ${isDark ? 'bg-blue-900/20 border-blue-800 text-blue-200' : 'bg-blue-50 border-blue-200 text-blue-800'}`}>
-                        <div className="flex items-center gap-2 font-semibold">
-                          <OpenInNewIcon sx={{ fontSize: 18 }} />
-                          How to add more repositories
-                        </div>
-                        <p className="opacity-90">
-                          To grant Ortelius access to additional repositories, you must configure the installation on GitHub directly:
-                        </p>
-                        <ol className="list-decimal list-inside space-y-1 ml-1 opacity-90">
-                          <li>Go to your <strong>GitHub Settings</strong> (or Organization Settings).</li>
-                          <li>Navigate to <strong>Applications</strong> &gt; <strong>Installed GitHub Apps</strong>.</li>
-                          <li>Click <strong>Configure</strong> next to the Ortelius/PDVD app.</li>
-                          <li>Scroll down to <strong>Repository access</strong> and select the desired repositories.</li>
-                        </ol>
-                        <a 
-                          href="https://github.com/settings/installations" 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="mt-2 text-sm font-bold hover:underline w-fit"
-                        >
-                          Open GitHub App Settings &rarr;
-                        </a>
-                      </div>
-                      {/* --- INSTRUCTIONS SECTION END --- */}
-
-                      {repos.length === 0 && !loadingRepos && (
-                          <button 
-                              onClick={fetchRepos}
-                              className="text-blue-600 hover:underline text-sm font-medium"
-                          >
-                              Refresh Repository List
-                          </button>
-                      )}
-
-                      {loadingRepos && <div className="text-sm text-gray-500">Loading repositories...</div>}
-
-                      {repos.length > 0 && (
-                          <div>
-                              <h3 className={`text-sm font-semibold mb-2 ${textClass}`}>Connected Repositories:</h3>
-                              <div className="border rounded-lg overflow-hidden max-h-64 overflow-y-auto" style={{ borderColor: isDark ? '#30363d' : '#e5e7eb' }}>
-                                  {repos.map(repo => (
-                                      <div 
-                                          key={repo.id} 
-                                          className={`p-3 flex items-center gap-3 border-b last:border-0 border-gray-100 dark:border-[#30363d]`}
-                                      >
-                                          <div className="flex items-center gap-2">
-                                              {/* Simple dot to indicate status */}
-                                              <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                                              <p className={`text-sm font-medium ${textClass}`}>{repo.full_name}</p>
-                                              {repo.private && <span className="text-[10px] bg-gray-200 text-gray-700 px-1.5 rounded ml-2">Private</span>}
-                                          </div>
-                                      </div>
-                                  ))}
+              {/* Collapsible Content */}
+              {isGithubExpanded && (
+                  <div className="px-6 pb-6 animate-fadeIn">
+                      {githubConnected ? (
+                        <div className="space-y-6 pt-2 border-t border-gray-100 dark:border-[#30363d]">
+                            
+                            {/* --- INSTRUCTIONS SECTION START --- */}
+                            <div className={`mt-4 p-4 rounded-lg text-sm border flex flex-col gap-2 ${isDark ? 'bg-blue-900/20 border-blue-800 text-blue-200' : 'bg-blue-50 border-blue-200 text-blue-800'}`}>
+                              <div className="flex items-center gap-2 font-semibold">
+                                <OpenInNewIcon sx={{ fontSize: 18 }} />
+                                How to add more repositories
                               </div>
-                          </div>
+                              <p className="opacity-90">
+                                To grant Ortelius access to additional repositories, you must configure the installation on GitHub directly:
+                              </p>
+                              <ol className="list-decimal list-inside space-y-1 ml-1 opacity-90">
+                                <li>Go to your <strong>GitHub Settings</strong> (or Organization Settings).</li>
+                                <li>Navigate to <strong>Applications</strong> &gt; <strong>Installed GitHub Apps</strong>.</li>
+                                <li>Click <strong>Configure</strong> next to the Ortelius/PDVD app.</li>
+                                <li>Scroll down to <strong>Repository access</strong> and select the desired repositories.</li>
+                              </ol>
+                              <a 
+                                href="https://github.com/settings/installations" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="mt-2 text-sm font-bold hover:underline w-fit"
+                              >
+                                Open GitHub App Settings &rarr;
+                              </a>
+                            </div>
+                            {/* --- INSTRUCTIONS SECTION END --- */}
+
+                            {repos.length === 0 && !loadingRepos && (
+                                <button 
+                                    onClick={fetchRepos}
+                                    className="text-blue-600 hover:underline text-sm font-medium"
+                                >
+                                    Refresh Repository List
+                                </button>
+                            )}
+
+                            {loadingRepos && <div className="text-sm text-gray-500">Loading repositories...</div>}
+
+                            {repos.length > 0 && (
+                                <div>
+                                    <h3 className={`text-sm font-semibold mb-2 ${textClass}`}>Connected Repositories:</h3>
+                                    <div className="border rounded-lg overflow-hidden max-h-64 overflow-y-auto" style={{ borderColor: isDark ? '#30363d' : '#e5e7eb' }}>
+                                        {repos.map(repo => (
+                                            <div 
+                                                key={repo.id} 
+                                                className={`p-3 flex items-center gap-3 border-b last:border-0 border-gray-100 dark:border-[#30363d]`}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    {/* Simple dot to indicate status */}
+                                                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                                                    <p className={`text-sm font-medium ${textClass}`}>{repo.full_name}</p>
+                                                    {repo.private && <span className="text-[10px] bg-gray-200 text-gray-700 px-1.5 rounded ml-2">Private</span>}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                      ) : (
+                        <div className="pt-4 border-t border-gray-100 dark:border-[#30363d] text-center">
+                          <p className={`text-sm ${mutedClass}`}>
+                            Connect your GitHub account using the button above to sync repositories and view integration details.
+                          </p>
+                        </div>
                       )}
                   </div>
               )}
