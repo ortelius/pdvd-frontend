@@ -127,7 +127,7 @@ export default function TopNavigation() {
             </button>
 
             <Link href="/dashboard" className="flex items-center gap-2 flex-shrink-0">
-              <img src="/logo.svg" alt="Ortelius" className="h-7 w-7 object-contain" />
+              <img src="/logo.svg" alt="Ortelius" className="h-10 w-10 object-contain" />
             </Link>
               
               <Link
