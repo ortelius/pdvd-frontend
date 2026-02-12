@@ -181,6 +181,8 @@ export const GET_AFFECTED_RELEASES = `
       synced_endpoint_count
       vulnerability_count
       vulnerability_count_delta
+      modified
+      published
     }
   }
 `

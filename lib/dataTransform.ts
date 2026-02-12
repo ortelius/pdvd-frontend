@@ -20,12 +20,25 @@ export function countVulnerabilitiesBySeverity (vulnerabilities: Vulnerability[]
   return counts
 }
 
+// Helper to check if a Date object is valid and not the Unix epoch
+function isValidDate (date: Date): boolean {
+  return !isNaN(date.getTime()) && date.getTime() > 86400000 // after Jan 2 1970
+}
+
 // Helper to format relative time
 export function getRelativeTime (dateString: string): string {
   try {
+    if (!dateString) return 'unknown'
+
     const date = new Date(dateString)
+    if (!isValidDate(date)) return 'unknown'
+
     const now = new Date()
     const diffMs = now.getTime() - date.getTime()
+
+    // Guard against future dates or epoch-like values
+    if (diffMs < 0) return 'unknown'
+
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
 
     if (diffDays === 0) return 'today'
@@ -33,9 +46,10 @@ export function getRelativeTime (dateString: string): string {
     if (diffDays < 7) return `${diffDays} days ago`
     if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`
     if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`
+
     return `${Math.floor(diffDays / 365)} years ago`
   } catch {
-    return 'recently'
+    return 'unknown'
   }
 }
 
@@ -79,9 +93,13 @@ export function transformAffectedReleasesToImageData (
       else if (rating === 'low') vulnCounts.low++
     })
 
-    // Get the most recent modified date
+    // Get the most recent modified date, falling back to published date
     const mostRecentDate = releases.reduce((latest, r) => {
-      const date = new Date(r.modified)
+      // Try modified first, then published
+      const dateStr = r.modified || r.published
+      if (!dateStr) return latest
+      const date = new Date(dateStr)
+      if (!isValidDate(date)) return latest
       return date > latest ? date : latest
     }, new Date(0))
 
@@ -101,7 +119,7 @@ export function transformAffectedReleasesToImageData (
       publisher: firstRelease.project_type === 'docker' ? 'Docker Official Image' : 'Community',
       description: `${firstRelease.project_type ?? 'Unknown'} release with ${String(firstRelease.dependency_count)} dependencies`,
       pulls: firstRelease.dependency_count > 100 ? '1B+' : firstRelease.dependency_count > 50 ? '500M+' : '100M+',
-      updated: getRelativeTime(mostRecentDate.toISOString()),
+      updated: isValidDate(mostRecentDate) ? getRelativeTime(mostRecentDate.toISOString()) : 'unknown',
       verified: false,
       official: false,
       tags: ['latest', firstRelease.release_version, firstRelease.project_type ?? 'unknown'],
