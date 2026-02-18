@@ -4,7 +4,6 @@ kind: Service
 metadata:
   name: {{ include "microservice.name" . }}
   annotations:
-    cloud.google.com/neg: '{"ingress": true}'
     cloud.google.com/backend-config: '{"default": "{{ include "microservice.name" . }}-backend-config"}'
 spec:
   selector:
@@ -13,6 +12,5 @@ spec:
     - protocol: TCP
       port: 8080
       targetPort: 8080
-      name: {{ include "microservice.name" . }}-http
   type: NodePort
 ---
