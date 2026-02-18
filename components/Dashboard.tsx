@@ -50,6 +50,219 @@ const COLORS = {
   NONE: '#9ca3af'
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Small Multiples — panel definitions
+// ─────────────────────────────────────────────────────────────────────────────
+const SM_PANELS = [
+  {
+    key: 'critical' as keyof VulnerabilityTrend,
+    label: 'CRITICAL',
+    color: '#dc2626',
+    gradientId: 'smGradCritical',
+    panelBg: 'rgba(220,38,38,0.03)',
+    borderColor: 'rgba(220,38,38,0.4)',
+    labelColor: '#dc2626',
+    strokeWidth: 2,
+    height: 76,
+    glowFilter: 'drop-shadow(0 0 3px rgba(220,38,38,0.6))',
+  },
+  {
+    key: 'high' as keyof VulnerabilityTrend,
+    label: 'HIGH',
+    color: '#f97316',
+    gradientId: 'smGradHigh',
+    panelBg: 'transparent',
+    borderColor: 'rgba(249,115,22,0.25)',
+    labelColor: '#f97316',
+    strokeWidth: 1.5,
+    height: 76,
+    glowFilter: 'none',
+  },
+  {
+    key: 'medium' as keyof VulnerabilityTrend,
+    label: 'MEDIUM',
+    color: '#eab308',
+    gradientId: 'smGradMedium',
+    panelBg: 'transparent',
+    borderColor: 'rgba(234,179,8,0.25)',
+    labelColor: '#ca8a04',
+    strokeWidth: 1.5,
+    height: 76,
+    glowFilter: 'none',
+  },
+  {
+    key: 'low' as keyof VulnerabilityTrend,
+    label: 'LOW',
+    color: '#3b82f6',
+    gradientId: 'smGradLow',
+    panelBg: 'transparent',
+    borderColor: 'rgba(59,130,246,0.25)',
+    labelColor: '#3b82f6',
+    strokeWidth: 1.5,
+    height: 76,
+    glowFilter: 'none',
+  },
+]
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Custom tooltip for small multiples
+// ─────────────────────────────────────────────────────────────────────────────
+const SmTooltip = ({ active, payload, label, color, severity }: any) => {
+  if (!active || !payload?.length) return null
+  return (
+    <div style={{
+      background: '#fff',
+      border: `1px solid ${color}55`,
+      borderLeft: `3px solid ${color}`,
+      borderRadius: 6,
+      padding: '5px 10px',
+      fontSize: 11,
+      fontFamily: 'ui-monospace, monospace',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+      lineHeight: 1.6,
+    }}>
+      <div style={{ color, fontWeight: 700 }}>{severity}: {payload[0]?.value ?? 0}</div>
+      <div style={{ color: '#94a3b8' }}>
+        {new Date(label).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Single small-multiple panel
+// ─────────────────────────────────────────────────────────────────────────────
+const SmPanel = ({
+  panel,
+  data,
+  formatDate,
+  isLast,
+}: {
+  panel: typeof SM_PANELS[number]
+  data: VulnerabilityTrend[]
+  formatDate: (d: string) => string
+  isLast: boolean
+}) => {
+  const maxVal = Math.max(...data.map(d => (d[panel.key] as number) ?? 0), 1)
+
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'stretch',
+      borderLeft: `3px solid ${panel.borderColor}`,
+      background: panel.panelBg,
+      borderRadius: '0 4px 4px 0',
+      marginBottom: isLast ? 0 : 4,
+      overflow: 'hidden',
+    }}>
+      {/* Label column */}
+      <div style={{
+        width: 60,
+        flexShrink: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        alignItems: 'flex-end',
+        padding: '6px 8px 6px 4px',
+      }}>
+        <span style={{
+          fontFamily: 'ui-monospace, monospace',
+          fontSize: 8,
+          fontWeight: 700,
+          letterSpacing: '0.08em',
+          color: panel.labelColor,
+          lineHeight: 1,
+        }}>
+          {panel.label}
+        </span>
+        <span style={{
+          fontFamily: 'ui-monospace, monospace',
+          fontSize: 8,
+          color: '#94a3b8',
+          lineHeight: 1,
+        }}>
+          {maxVal}
+        </span>
+        <span style={{
+          fontFamily: 'ui-monospace, monospace',
+          fontSize: 8,
+          color: '#cbd5e1',
+          lineHeight: 1,
+        }}>
+          0
+        </span>
+      </div>
+
+      {/* Chart */}
+      <div style={{ flex: 1, height: panel.height }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart
+            data={data}
+            margin={{ top: 4, right: 6, left: 0, bottom: isLast ? 14 : 2 }}
+          >
+            <defs>
+              <linearGradient id={panel.gradientId} x1="0" y1="0" x2="0" y2="1">
+                <stop
+                  offset="0%"
+                  stopColor={panel.color}
+                  stopOpacity={panel.key === 'critical' ? 0.45 : 0.25}
+                />
+                <stop offset="100%" stopColor={panel.color} stopOpacity={0.02} />
+              </linearGradient>
+            </defs>
+
+            <CartesianGrid
+              strokeDasharray="2 6"
+              vertical={false}
+              stroke={panel.key === 'critical' ? 'rgba(220,38,38,0.07)' : '#f1f5f9'}
+            />
+
+            <XAxis
+              dataKey="date"
+              tickFormatter={formatDate}
+              tick={{ fontSize: 9, fill: '#94a3b8', fontFamily: 'ui-monospace, monospace' }}
+              axisLine={false}
+              tickLine={false}
+              minTickGap={44}
+              hide={!isLast}
+            />
+
+            <YAxis
+              tick={{ fontSize: 9, fill: '#cbd5e1', fontFamily: 'ui-monospace, monospace' }}
+              axisLine={false}
+              tickLine={false}
+              tickCount={3}
+              width={24}
+              domain={[0, maxVal]}
+            />
+
+            <Tooltip
+              content={<SmTooltip color={panel.color} severity={panel.label} />}
+              cursor={{ stroke: panel.color, strokeWidth: 1, strokeOpacity: 0.25, strokeDasharray: '3 3' }}
+            />
+
+            <Area
+              type="monotone"
+              dataKey={panel.key as string}
+              stroke={panel.color}
+              strokeWidth={panel.strokeWidth}
+              fill={`url(#${panel.gradientId})`}
+              dot={false}
+              activeDot={{
+                r: 3.5,
+                fill: panel.color,
+                stroke: '#ffffff',
+                strokeWidth: 1.5,
+              }}
+              style={panel.key === 'critical' ? { filter: panel.glowFilter } : {}}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  )
+}
+
 export default function Dashboard() {
   const { selectedOrg } = useOrg()
 
@@ -210,7 +423,6 @@ export default function Dashboard() {
                 <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded text-xs font-semibold border border-purple-200 cursor-help flex items-center gap-1">
                   <span>NIST Recommended SLA Policy</span>
                   <span className="w-1 h-1 rounded-full bg-purple-400"></span>
-                  {/* CHANGED: expanded to show all 4 tiers per NIST SP 800-40 Rev. 4 */}
                   <span className="font-normal opacity-80">Crit 15d • High 30d • Med 90d • Low 365d</span>
                 </span>
                 
@@ -242,12 +454,10 @@ export default function Dashboard() {
                     <div className="col-span-1 font-medium text-gray-700 flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-blue-500"></span> Low
                     </div>
-                    {/* CHANGED: 180 days → 365 days per NIST SP 800-40 Rev. 4 */}
                     <div className="col-span-1 text-right text-gray-600">365 days</div>
                   </div>
                   
                   <div className="mt-3 pt-2 border-t border-gray-100 text-[10px] text-gray-400 italic">
-                    {/* CHANGED: added NIST citation */}
                     Per NIST SP 800-40 Rev. 4. Clock starts at first detection on a deployed endpoint.
                   </div>
                 </div>
@@ -435,53 +645,88 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
-        
-         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex flex-col" style={{ minHeight: '500px' }}>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-bold text-gray-900">Vulnerability Trend (180 Days)</h2>
-              <span className="text-xs text-gray-400">
-                <a href="#nist-800-218-rv1" className="text-blue-600 underline hover:text-blue-800">NIST 800-218 RV.1</a> • <a href="#nist-800-137" className="text-blue-600 underline hover:text-blue-800">NIST 800-137</a>
+
+        {/* ── VULNERABILITY TREND: SMALL MULTIPLES ──────────────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+          <div
+            className="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex flex-col"
+            style={{ minHeight: '420px' }}
+          >
+            {/* Header */}
+            <div className="flex justify-between items-start mb-5">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Vulnerability Trend (180 Days)</h2>
+                <p className="text-xs text-gray-400 mt-0.5 font-mono">
+                  Each severity band scaled independently — critical always visible
+                </p>
+              </div>
+              <span className="text-xs text-gray-400 flex-shrink-0 ml-4">
+                <a href="#nist-800-218-rv1" className="text-blue-600 underline hover:text-blue-800">
+                  NIST 800-218 RV.1
+                </a>
+                {' • '}
+                <a href="#nist-800-137" className="text-blue-600 underline hover:text-blue-800">
+                  NIST 800-137
+                </a>
               </span>
             </div>
-            <div className="flex-1" style={{ minHeight: '400px' }}>
+
+            {/* Panels */}
+            <div className="flex-1 flex flex-col justify-between">
               {loadingTrend ? (
-                <div className="flex items-center justify-center h-full text-gray-400">Loading trend...</div>
+                <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+                  Loading trend...
+                </div>
               ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="colorCritical" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={COLORS.CRITICAL} stopOpacity={0.1}/>
-                        <stop offset="95%" stopColor={COLORS.CRITICAL} stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                    <XAxis 
-                      dataKey="date" 
-                      tickFormatter={formatDate} 
-                      tick={{ fontSize: 12, fill: '#6b7280' }} 
-                      axisLine={false} 
-                      tickLine={false} 
-                      minTickGap={30}
-                    />
-                    <YAxis tick={{ fontSize: 12, fill: '#6b7280' }} axisLine={false} tickLine={false} />
-                    <Tooltip 
-                      contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                      labelFormatter={(l) => new Date(l).toLocaleDateString()}
-                    />
-                    <Area type="monotone" dataKey="low" stackId="1" stroke={COLORS.LOW} fill={COLORS.LOW} fillOpacity={0.6} />
-                    <Area type="monotone" dataKey="medium" stackId="1" stroke={COLORS.MEDIUM} fill={COLORS.MEDIUM} fillOpacity={0.6} />
-                    <Area type="monotone" dataKey="high" stackId="1" stroke={COLORS.HIGH} fill={COLORS.HIGH} fillOpacity={0.6} />
-                    <Area type="monotone" dataKey="critical" stackId="1" stroke={COLORS.CRITICAL} fill="url(#colorCritical)" fillOpacity={0.8} />
-                  </AreaChart>
-                </ResponsiveContainer>
+                SM_PANELS.map((panel, idx) => (
+                  <SmPanel
+                    key={panel.key as string}
+                    panel={panel}
+                    data={trendData}
+                    formatDate={formatDate}
+                    isLast={idx === SM_PANELS.length - 1}
+                  />
+                ))
               )}
+            </div>
+
+            {/* Legend */}
+            <div className="flex items-center gap-5 mt-4 pt-4 border-t border-gray-100 flex-wrap">
+              {SM_PANELS.map(panel => (
+                <div key={panel.key as string} className="flex items-center gap-1.5">
+                  <div style={{
+                    width: 18,
+                    height: 2.5,
+                    borderRadius: 2,
+                    background: panel.color,
+                    boxShadow: panel.key === 'critical' ? `0 0 5px ${panel.color}88` : 'none',
+                  }} />
+                  <span style={{
+                    fontSize: 10,
+                    fontFamily: 'ui-monospace, monospace',
+                    color: panel.key === 'critical' ? panel.color : '#6b7280',
+                    fontWeight: panel.key === 'critical' ? 700 : 400,
+                    letterSpacing: '0.04em',
+                  }}>
+                    {panel.label}
+                  </span>
+                </div>
+              ))}
+              <span style={{
+                marginLeft: 'auto',
+                fontSize: 10,
+                fontFamily: 'ui-monospace, monospace',
+                color: '#9ca3af',
+                fontStyle: 'italic',
+              }}>
+                Y-axis independent per severity
+              </span>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex flex-col" style={{ minHeight: '500px' }}>
+          {/* Security Velocity — unchanged */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex flex-col" style={{ minHeight: '420px' }}>
             <div className="mb-4 flex justify-between items-start">
               <div>
                 <h2 className="text-lg font-bold text-gray-900">Security Velocity & Impact Metrics</h2>
@@ -574,7 +819,6 @@ export default function Dashboard() {
                   const criticalSLA = 15;
                   const highSLA = 30;
                   const mediumSLA = 90;
-                  // CHANGED: 180 → 365 per NIST SP 800-40 Rev. 4
                   const lowSLA = 365;
                   
                   let approaching = 0;
@@ -660,13 +904,11 @@ export default function Dashboard() {
                   Official Source ↗
                 </a>
               </p>
-              
               <div className="bg-gray-50 p-4 rounded-lg mb-4 border-l-4 border-indigo-500">
                 <p className="text-sm text-gray-700 leading-relaxed">
                   <strong>Purpose:</strong> Provides a catalog of security and privacy controls for federal information systems and organizations to protect operations, assets, individuals, and the Nation from diverse threats including hostile attacks, human errors, and natural disasters.
                 </p>
               </div>
-
               <div className="space-y-4 ml-4">
                 <div id="nist-800-53-si2" className="border-l-2 border-indigo-400 pl-4">
                   <h4 className="font-bold text-gray-800 mb-2">
@@ -681,10 +923,6 @@ export default function Dashboard() {
                       <li><strong>(d)</strong> Incorporate flaw remediation into organizational configuration management process</li>
                     </ul>
                   </div>
-                  <p className="text-sm text-gray-700 mb-2"><strong>Control Discussion (Excerpt):</strong></p>
-                  <p className="text-sm text-gray-600 italic mb-3">
-                    "The need to remediate system flaws applies to all types of software and firmware. Organizations identify systems affected by software flaws, including potential vulnerabilities resulting from those flaws, and report this information to designated organizational personnel. Organization-defined time periods for updating security-relevant software and firmware may vary based on risk factors, including the security category of the system, criticality of the update, organizational risk tolerance, mission supported, or threat environment."
-                  </p>
                   <p className="text-sm text-gray-700 mt-3"><strong>Dashboard Implementation:</strong></p>
                   <ul className="list-disc list-inside text-sm text-gray-600 space-y-1 ml-2">
                     <li><strong>MTTR Metrics:</strong> Demonstrate time-based flaw remediation tracking</li>
@@ -705,13 +943,11 @@ export default function Dashboard() {
                   Official Source ↗
                 </a>
               </p>
-              
               <div className="bg-gray-50 p-4 rounded-lg mb-4 border-l-4 border-purple-500">
                 <p className="text-sm text-gray-700 leading-relaxed">
                   <strong>Purpose:</strong> Assists organizations in understanding the importance of patch management and in developing, implementing, and maintaining an effective enterprise patch management program, including recommended remediation timelines by severity.
                 </p>
               </div>
-
               <div className="space-y-4 ml-4">
                 <div className="border-l-2 border-purple-400 pl-4">
                   <h4 className="font-bold text-gray-800 mb-2">Recommended Remediation Timelines (Table 4-1)</h4>
@@ -753,20 +989,17 @@ export default function Dashboard() {
                   Official Source ↗
                 </a>
               </p>
-              
               <div className="bg-gray-50 p-4 rounded-lg mb-4 border-l-4 border-teal-500">
                 <p className="text-sm text-gray-700 leading-relaxed">
                   <strong>Purpose:</strong> Assists organizations in developing a continuous monitoring strategy and implementing a continuous monitoring program that provides visibility into organizational assets, awareness of threats and vulnerabilities, and visibility into the effectiveness of deployed security controls.
                 </p>
               </div>
-
               <div className="space-y-4 ml-4">
                 <div className="border-l-2 border-teal-400 pl-4">
                   <h4 className="font-bold text-gray-800 mb-2">Core ISCM Concepts</h4>
                   <div className="bg-teal-50 p-3 rounded text-sm text-gray-700 mb-3">
                     <p className="mb-2"><strong>ISCM Definition:</strong></p>
                     <p className="italic mb-3">"Maintaining ongoing awareness of information security, vulnerabilities, and threats to support organizational risk management decisions."</p>
-                    
                     <p className="mb-2"><strong>Key Principles:</strong></p>
                     <ul className="list-disc list-inside space-y-1 ml-2">
                       <li>Ensures deployed security controls continue to be effective over time</li>
@@ -776,20 +1009,9 @@ export default function Dashboard() {
                       <li>Provides ongoing assurance that planned security controls are aligned with organizational risk tolerance</li>
                     </ul>
                   </div>
-                  
-                  <p className="text-sm text-gray-700 mb-2"><strong>ISCM Strategy Components:</strong></p>
-                  <ul className="list-disc list-inside text-sm text-gray-600 space-y-1 ml-2">
-                    <li>Grounded in clear understanding of organizational risk tolerance</li>
-                    <li>Includes metrics providing meaningful security status indications at all organizational tiers</li>
-                    <li>Ensures continued effectiveness of all security controls</li>
-                    <li>Verifies compliance with information security requirements</li>
-                    <li>Maintains visibility into security of organizational IT assets</li>
-                    <li>Ensures knowledge and control of changes to systems and environments</li>
-                  </ul>
-
                   <p className="text-sm text-gray-700 mt-3"><strong>Dashboard Implementation:</strong></p>
                   <ul className="list-disc list-inside text-sm text-gray-600 space-y-1 ml-2">
-                    <li><strong>Vulnerability Trend (180 Days):</strong> Provides ongoing visibility into vulnerability detection patterns over time</li>
+                    <li><strong>Vulnerability Trend (Small Multiples):</strong> Each severity on its own scale ensures critical CVEs are always visible, directly supporting ISCM continuous awareness requirements</li>
                     <li><strong>Real-time Metrics:</strong> Supports risk-based decision making with current security status information</li>
                     <li><strong>SLA Monitoring:</strong> Ensures security controls (remediation timelines) remain effective and within risk tolerance</li>
                     <li><strong>Severity-Based Tracking:</strong> Enables prioritization of security response actions based on risk</li>
@@ -809,49 +1031,26 @@ export default function Dashboard() {
                   Official Source ↗
                 </a>
               </p>
-              
               <div className="bg-gray-50 p-4 rounded-lg mb-4 border-l-4 border-cyan-500">
                 <p className="text-sm text-gray-700 leading-relaxed">
                   <strong>Purpose:</strong> Explains potential security concerns associated with container technologies and provides recommendations for addressing these concerns across the container technology stack.
                 </p>
               </div>
-
               <div className="space-y-4 ml-4">
                 <div id="nist-800-190-s32" className="border-l-2 border-cyan-400 pl-4">
                   <h4 className="font-bold text-gray-800 mb-2">
                     <a href="#nist-800-190-s32" className="text-cyan-700 hover:underline">Section 3.2</a>: Registry Risks & Image Risks
                   </h4>
-                  <div className="bg-cyan-50 p-3 rounded text-sm text-gray-700 mb-3">
-                    <p className="mb-2"><strong>Key Guidance:</strong></p>
-                    <p className="text-sm italic mb-2">Container images must be continuously scanned for vulnerabilities and misconfigurations. Organizations should:</p>
-                    <ul className="list-disc list-inside space-y-1 ml-2">
-                      <li>Scan images for known vulnerabilities and prioritize remediation by severity</li>
-                      <li>Track container image provenance and maintain SBOMs</li>
-                      <li>Establish SLA adherence for container CVE remediation based on severity</li>
-                      <li>Monitor container vulnerability exposure over time</li>
-                    </ul>
-                  </div>
                   <p className="text-sm text-gray-700 mt-3"><strong>Dashboard Implementation:</strong></p>
                   <ul className="list-disc list-inside text-sm text-gray-600 space-y-1 ml-2">
                     <li>Severity-based vulnerability tracking and SLA compliance</li>
                     <li>% Open &gt; SLA metric for container vulnerability risk assessment</li>
                   </ul>
                 </div>
-
                 <div id="nist-800-190-s33" className="border-l-2 border-cyan-400 pl-4">
                   <h4 className="font-bold text-gray-800 mb-2">
                     <a href="#nist-800-190-s33" className="text-cyan-700 hover:underline">Section 3.3</a>: Orchestrator Risks & Runtime Monitoring
                   </h4>
-                  <div className="bg-cyan-50 p-3 rounded text-sm text-gray-700 mb-3">
-                    <p className="mb-2"><strong>Key Guidance:</strong></p>
-                    <p className="text-sm italic mb-2">Organizations must monitor deployed containers for new vulnerabilities and respond appropriately:</p>
-                    <ul className="list-disc list-inside space-y-1 ml-2">
-                      <li>Continuously monitor containers in runtime for vulnerability detection</li>
-                      <li>Track remediation metrics for vulnerabilities discovered post-deployment</li>
-                      <li>Implement automated patching and update processes for containers</li>
-                      <li>Maintain visibility into container deployment lifecycle</li>
-                    </ul>
-                  </div>
                   <p className="text-sm text-gray-700 mt-3"><strong>Dashboard Implementation:</strong></p>
                   <ul className="list-disc list-inside text-sm text-gray-600 space-y-1 ml-2">
                     <li><strong>MTTR (Post-Deploy):</strong> Tracks remediation time specifically for runtime container vulnerabilities</li>
@@ -872,15 +1071,12 @@ export default function Dashboard() {
                   Official Source ↗
                 </a>
               </p>
-              
               <div className="bg-gray-50 p-4 rounded-lg mb-4 border-l-4 border-blue-500">
                 <p className="text-sm text-gray-700 leading-relaxed">
                   <strong>Purpose:</strong> Provides a core set of high-level secure software development practices that can be integrated into any SDLC to help reduce vulnerabilities in released software, mitigate exploitation impact, and address root causes.
                 </p>
               </div>
-
               <div className="space-y-6 ml-4">
-                
                 <div id="nist-800-218-rv1" className="border-l-2 border-green-400 pl-4">
                   <h4 className="font-bold text-gray-800 mb-2">
                     <a href="#nist-800-218-rv1" className="text-green-700 hover:underline">RV.1</a>: Identify and Confirm Vulnerabilities on an Ongoing Basis
@@ -899,7 +1095,7 @@ export default function Dashboard() {
                   <ul className="list-disc list-inside text-sm text-gray-600 space-y-1 ml-2">
                     <li><strong>Total New CVEs:</strong> Tracks ongoing vulnerability identification within 180-day rolling window</li>
                     <li><strong>Post-Deploy CVEs:</strong> Monitors vulnerabilities discovered in deployed systems (continuous monitoring)</li>
-                    <li><strong>Vulnerability Trend Chart:</strong> Visualizes vulnerability detection over time</li>
+                    <li><strong>Vulnerability Trend (Small Multiples):</strong> Visualizes detection over time with each severity on its own axis — critical CVEs at 1–2 count remain fully visible alongside high/medium/low counts in the hundreds</li>
                   </ul>
                 </div>
 
