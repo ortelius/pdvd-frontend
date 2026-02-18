@@ -205,7 +205,6 @@ export default function Dashboard() {
             <h1 className="text-2xl font-bold text-gray-900">Post-Deployment OSS Vulnerability Dashboard</h1>
             <div className="flex items-center gap-2 mt-1">
               <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs font-semibold border border-blue-200">Rolling 180 Days</span>
-              <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded text-xs font-semibold border border-green-200">Endpoint Focused</span>
               
               <div className="relative group">
                 <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded text-xs font-semibold border border-purple-200 cursor-help flex items-center gap-1">
@@ -287,7 +286,7 @@ export default function Dashboard() {
             }
           />
           <ExecutiveCard 
-            title="MTTR (All)" 
+            title="MTTR (Pre + Post Deploy)" 
             value={`${executive_summary.mttr_all.toFixed(1)}d`}
             subValue="avg remediation"
             icon={ScheduleIcon}
@@ -295,8 +294,9 @@ export default function Dashboard() {
             compliance={<><a href="#nist-800-218-rv2" className="text-blue-600 underline hover:text-blue-800">NIST 800-218 RV.2</a><br/><a href="#nist-800-53-si2" className="text-blue-600 underline hover:text-blue-800">NIST 800-53 SI-2</a></>}
             tooltip={
               <span>
-                Mean Time To Remediate for all endpoint CVEs fixed in the last 180 days.<br/>
-                <strong>Calculation:</strong> Σ(<em>Fix Date</em> - <em>Detect Date</em>) / Total Fixed CVEs.
+                Mean Time To Remediate for all endpoint CVEs (pre- and post-deployment) fixed in the last 180 days.<br/>
+                <strong>Calculation:</strong> Σ(<em>Fix Date</em> - <em>First Introduced Date</em>) / Total Fixed CVEs.<br/>
+                Clock starts at <em>root_introduced_at</em> — the first known version where the CVE was present, not re-detection on upgrade.
               </span>
             }
           />
@@ -310,7 +310,8 @@ export default function Dashboard() {
             tooltip={
               <span>
                 Mean Time To Remediate for Post-Deployment CVEs only.<br/>
-                <strong>Calculation:</strong> Σ(<em>Fix Date</em> - <em>Detect Date</em>) / Total Fixed Post-Deploy CVEs.
+                <strong>Calculation:</strong> Σ(<em>Fix Date</em> - <em>First Introduced Date</em>) / Total Fixed Post-Deploy CVEs.<br/>
+                Clock starts at <em>root_introduced_at</em> — the first known version where the CVE was present, not re-detection on upgrade.
               </span>
             }
           />
@@ -917,7 +918,7 @@ export default function Dashboard() {
                   </ul>
                   <p className="text-sm text-gray-700 mt-3"><strong>Dashboard Implementation:</strong></p>
                   <ul className="list-disc list-inside text-sm text-gray-600 space-y-1 ml-2">
-                    <li><strong>MTTR (All):</strong> Measures average time to remediate all endpoint CVEs (180-day window)</li>
+                    <li><strong>MTTR (Pre + Post Deploy):</strong> Measures average time to remediate all endpoint CVEs (180-day window)</li>
                     <li><strong>MTTR (Post-Deploy):</strong> Tracks remediation time for mission-critical post-deployment vulnerabilities</li>
                     <li><strong>% Fixed in SLA:</strong> Demonstrates adherence to severity-based remediation timelines</li>
                     <li><strong>% Open &gt; SLA:</strong> Identifies at-risk vulnerabilities exceeding SLA thresholds</li>
