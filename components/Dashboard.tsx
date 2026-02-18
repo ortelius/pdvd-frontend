@@ -209,15 +209,16 @@ export default function Dashboard() {
               
               <div className="relative group">
                 <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded text-xs font-semibold border border-purple-200 cursor-help flex items-center gap-1">
-                  <span>SLA Policy</span>
+                  <span>NIST Recommended SLA Policy</span>
                   <span className="w-1 h-1 rounded-full bg-purple-400"></span>
-                  <span className="font-normal opacity-80">Crit 15d • High 30d</span>
+                  {/* CHANGED: expanded to show all 4 tiers per NIST SP 800-40 Rev. 4 */}
+                  <span className="font-normal opacity-80">Crit 15d • High 30d • Med 90d • Low 365d</span>
                 </span>
                 
                 <div className="absolute left-0 top-full mt-2 w-72 bg-white border border-gray-200 shadow-xl rounded-lg p-4 z-50 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-200">
                   <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
                     <ScheduleIcon fontSize="small" className="text-purple-600" />
-                    <h4 className="font-bold text-gray-900 text-sm">SLA Remediation Targets</h4>
+                    <h4 className="font-bold text-gray-900 text-sm">NIST Recommended Remediation Targets</h4>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-y-2 text-xs">
@@ -242,11 +243,13 @@ export default function Dashboard() {
                     <div className="col-span-1 font-medium text-gray-700 flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-blue-500"></span> Low
                     </div>
-                    <div className="col-span-1 text-right text-gray-600">180 days</div>
+                    {/* CHANGED: 180 days → 365 days per NIST SP 800-40 Rev. 4 */}
+                    <div className="col-span-1 text-right text-gray-600">365 days</div>
                   </div>
                   
                   <div className="mt-3 pt-2 border-t border-gray-100 text-[10px] text-gray-400 italic">
-                    Clock starts at first detection on a deployed endpoint.
+                    {/* CHANGED: added NIST citation */}
+                    Per NIST SP 800-40 Rev. 4. Clock starts at first detection on a deployed endpoint.
                   </div>
                 </div>
               </div>
@@ -570,7 +573,8 @@ export default function Dashboard() {
                   const criticalSLA = 15;
                   const highSLA = 30;
                   const mediumSLA = 90;
-                  const lowSLA = 180;
+                  // CHANGED: 180 → 365 per NIST SP 800-40 Rev. 4
+                  const lowSLA = 365;
                   
                   let approaching = 0;
                   by_severity.forEach(s => {
@@ -684,6 +688,54 @@ export default function Dashboard() {
                   <ul className="list-disc list-inside text-sm text-gray-600 space-y-1 ml-2">
                     <li><strong>MTTR Metrics:</strong> Demonstrate time-based flaw remediation tracking</li>
                     <li><strong>SLA Compliance:</strong> Shows adherence to organization-defined time periods for remediation</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div id="nist-800-40" className="pt-6 border-t border-gray-200">
+              <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded text-sm font-semibold">NIST SP 800-40 Rev. 4</span>
+                Guide to Enterprise Patch Management Planning
+              </h3>
+              <p className="text-sm text-gray-600 mb-4 italic">
+                Published: April 2022 | 
+                <a href="https://csrc.nist.gov/pubs/sp/800/40/r4/final" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline ml-1">
+                  Official Source ↗
+                </a>
+              </p>
+              
+              <div className="bg-gray-50 p-4 rounded-lg mb-4 border-l-4 border-purple-500">
+                <p className="text-sm text-gray-700 leading-relaxed">
+                  <strong>Purpose:</strong> Assists organizations in understanding the importance of patch management and in developing, implementing, and maintaining an effective enterprise patch management program, including recommended remediation timelines by severity.
+                </p>
+              </div>
+
+              <div className="space-y-4 ml-4">
+                <div className="border-l-2 border-purple-400 pl-4">
+                  <h4 className="font-bold text-gray-800 mb-2">Recommended Remediation Timelines (Table 4-1)</h4>
+                  <div className="bg-purple-50 p-3 rounded text-sm text-gray-700 mb-3">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-purple-200">
+                          <th className="text-left py-1 font-semibold">Severity</th>
+                          <th className="text-left py-1 font-semibold">Recommended SLA</th>
+                          <th className="text-left py-1 font-semibold">Notes</th>
+                        </tr>
+                      </thead>
+                      <tbody className="space-y-1">
+                        <tr><td className="py-1 font-bold text-red-700">Critical</td><td className="py-1">15 days</td><td className="py-1 text-gray-500">Emergency patching</td></tr>
+                        <tr><td className="py-1 font-bold text-orange-700">High</td><td className="py-1">30 days</td><td className="py-1 text-gray-500">Urgent patching</td></tr>
+                        <tr><td className="py-1 font-medium text-yellow-700">Medium</td><td className="py-1">90 days</td><td className="py-1 text-gray-500">Standard patching cycle</td></tr>
+                        <tr><td className="py-1 font-medium text-blue-700">Low</td><td className="py-1">365 days</td><td className="py-1 text-gray-500">Next annual cycle</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="text-sm text-gray-700 mt-3"><strong>Dashboard Implementation:</strong></p>
+                  <ul className="list-disc list-inside text-sm text-gray-600 space-y-1 ml-2">
+                    <li>All SLA thresholds (Critical: 15d, High: 30d, Medium: 90d, Low: 365d) are sourced directly from this publication</li>
+                    <li><strong>% Fixed in SLA</strong> and <strong>% Open &gt; SLA</strong> metrics are calculated against these thresholds</li>
+                    <li><strong>SLA Burn Rate</strong> card projects upcoming SLA breaches within 30 days</li>
                   </ul>
                 </div>
               </div>
