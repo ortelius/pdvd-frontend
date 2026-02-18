@@ -228,12 +228,13 @@ const SmPanel = ({
             />
 
             <YAxis
-              tick={{ fontSize: 9, fill: '#cbd5e1', fontFamily: 'ui-monospace, monospace' }}
+              tick={{ fontSize: 9, fill: '#94a3b8', fontFamily: 'ui-monospace, monospace' }}
               axisLine={false}
               tickLine={false}
-              tickCount={3}
-              width={24}
+              width={28}
               domain={[0, maxVal]}
+              ticks={[0, maxVal]}
+              tickFormatter={(v: number) => v === 0 ? '0' : v.toLocaleString()}
             />
 
             <Tooltip
@@ -658,7 +659,7 @@ export default function Dashboard() {
               <div>
                 <h2 className="text-lg font-bold text-gray-900">Vulnerability Trend (180 Days)</h2>
                 <p className="text-xs text-gray-400 mt-0.5 font-mono">
-                  Each severity band scaled independently — critical always visible
+                  Each severity band scaled independently
                 </p>
               </div>
               <span className="text-xs text-gray-400 flex-shrink-0 ml-4">
