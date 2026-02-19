@@ -403,13 +403,6 @@ button.bg-purple-700 {
   box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.3);
 }
 
-/* Rounded containers get card styling */
-.dark .rounded-lg,
-.dark .rounded-xl,
-.dark .rounded {
-  background-color: #161b22;
-}
-
 /* Border radius + border combo = card */
 .dark .border.rounded-lg,
 .dark .border.rounded-xl,
