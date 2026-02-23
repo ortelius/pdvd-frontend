@@ -31,7 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="preconnect" href="https://app.ortelius.io" />
         <link rel="dns-prefetch" href="https://app.ortelius.io" />
-        {/* Blocking script to prevent dark mode flash */}
+        {/* FIX: script now removes 'dark' class if theme is light */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -40,6 +40,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   const theme = localStorage.getItem('ortelius_theme');
                   if (theme === 'dark') {
                     document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
                   }
                 } catch (e) {}
               })();
