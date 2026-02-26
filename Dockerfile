@@ -11,7 +11,7 @@ RUN rm -f package-lock.json; \
     curl -fsSL https://rpm.nodesource.com/setup_23.x | bash -; \
     dnf install nodejs -y; \
     npm install -g npm; \
-    npm install; \
+    npm install --legacy-peer-deps; \
     dnf upgrade -y; \
     dnf clean all
 
