@@ -23,6 +23,7 @@ metadata:
     networking.gke.io/managed-certificates: {{ include "microservice.name" . }}-managed-cert
     networking.gke.io/v1beta1.FrontendConfig: {{ include "microservice.name" . }}-frontend-config
 spec:
+  ingressClassName: "gce"
   rules:
     - host: {{ required "ingress.host is required" .Values.ingress.host | quote }}
       http:
@@ -87,6 +88,7 @@ metadata:
     alb.ingress.kubernetes.io/unhealthy-threshold-count: "3"
     alb.ingress.kubernetes.io/load-balancer-attributes: "idle_timeout.timeout_seconds=60,routing.http2.enabled=true"
 spec:
+  ingressClassName: "alb"
   rules:
     - host: {{ required "ingress.host is required" .Values.ingress.host | quote }}
       http:
