@@ -1,10 +1,11 @@
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "microservice.name" . }}
+  labels:
+    {{- include "microservice.labels" . | nindent 4 }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
       app: {{ include "microservice.name" . }}
@@ -12,21 +13,24 @@ spec:
     metadata:
       labels:
         app: {{ include "microservice.name" . }}
+        {{- include "microservice.labels" . | nindent 8 }}
     spec:
       nodeSelector:
         kubernetes.io/os: linux
       containers:
         - name: {{ include "microservice.name" . }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: Always
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
+            # Plain values — set in clusters/<env>/pdvd/values.yaml
             - name: RUNTIME_GRAPHQL_ENDPOINT
-              value: {{ default "https://app.ortelius.io/api/v1/graphql"  .Values.graphqlEndpoint | quote }}
+              value: {{ required "graphqlEndpoint is required" .Values.graphqlEndpoint | quote }}
             - name: RUNTIME_REST_ENDPOINT
-              value: {{ default "https://app.ortelius.io/api/v1"  .Values.restapiEndpoint | quote }}
+              value: {{ required "restapiEndpoint is required" .Values.restapiEndpoint | quote }}
           ports:
             - name: http
               containerPort: 8080
+              protocol: TCP
           readinessProbe:
             httpGet:
               path: /
@@ -34,4 +38,17 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 10
             failureThreshold: 3
----
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi

@@ -1,4 +1,13 @@
 ---
+{{/*
+  Ingress type is set per-cluster in clusters/<env>/pdvd/values.yaml (plain).
+  No ingress values come from secrets — cert ARNs, subnet IDs, hostnames are
+  all non-sensitive infrastructure identifiers.
+
+  glb  → GKE Global Load Balancer  (clusters/gke/pdvd/values.yaml)
+  alb  → AWS Application LB        (clusters/eks/pdvd/values.yaml)
+  kind → local Traefik              (dev only)
+*/}}
 {{- $ingressType := default "glb" .Values.ingress.type }}
 
 {{- if eq $ingressType "glb" }}
@@ -7,16 +16,15 @@ kind: Ingress
 metadata:
   name: {{ include "microservice.name" . }}-ingress
   labels:
-    app: {{ include "microservice.name" . }}
+    {{- include "microservice.labels" . | nindent 4 }}
   annotations:
     kubernetes.io/ingress.class: "gce"
-    kubernetes.io/ingress.global-static-ip-name: {{ default "static-app-ip" .Values.ingress.staticIP | quote }}
-    # LINK THE CERTIFICATE AND FRONTEND CONFIG
+    kubernetes.io/ingress.global-static-ip-name: {{ required "ingress.staticIP is required for GLB" .Values.ingress.staticIP | quote }}
     networking.gke.io/managed-certificates: {{ include "microservice.name" . }}-managed-cert
     networking.gke.io/v1beta1.FrontendConfig: {{ include "microservice.name" . }}-frontend-config
 spec:
   rules:
-    - host: {{ default "app.deployhub.com" .Values.ingress.host | quote }}
+    - host: {{ required "ingress.host is required" .Values.ingress.host | quote }}
       http:
         paths:
           - path: /api
@@ -34,24 +42,69 @@ spec:
                 port:
                   number: 8080
 ---
-# DEFINE THE GOOGLE MANAGED CERTIFICATE
 apiVersion: networking.gke.io/v1
 kind: ManagedCertificate
 metadata:
   name: {{ include "microservice.name" . }}-managed-cert
+  labels:
+    {{- include "microservice.labels" . | nindent 4 }}
 spec:
   domains:
-    # Uses the variable if provided, otherwise defaults to app.deployhub.com
-    - {{ default "app.deployhub.com" .Values.ingress.host }}
+    - {{ required "ingress.host is required" .Values.ingress.host }}
 ---
-# CONFIGURE HTTP TO HTTPS REDIRECT
 apiVersion: networking.gke.io/v1beta1
 kind: FrontendConfig
 metadata:
   name: {{ include "microservice.name" . }}-frontend-config
+  labels:
+    {{- include "microservice.labels" . | nindent 4 }}
 spec:
   redirectToHttps:
     enabled: true
+
+{{- else if eq $ingressType "alb" }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "microservice.name" . }}-ingress
+  labels:
+    {{- include "microservice.labels" . | nindent 4 }}
+  annotations:
+    kubernetes.io/ingress.class: "alb"
+    alb.ingress.kubernetes.io/scheme: {{ default "internet-facing" .Values.ingress.scheme | quote }}
+    alb.ingress.kubernetes.io/target-type: "ip"
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/ssl-policy: "ELBSecurityPolicy-TLS13-1-2-2021-06"
+    # Plain value — comes from acm_certificate_arn via clusters/eks/pdvd/values.yaml
+    alb.ingress.kubernetes.io/certificate-arn: {{ required "ingress.certificateArn is required for ALB" .Values.ingress.certificateArn | quote }}
+    # Plain value — comes from public_subnet_ids via clusters/eks/pdvd/values.yaml
+    alb.ingress.kubernetes.io/subnets: {{ required "ingress.subnets is required for ALB" .Values.ingress.subnets | quote }}
+    alb.ingress.kubernetes.io/healthcheck-path: "/"
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: "15"
+    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: "5"
+    alb.ingress.kubernetes.io/healthy-threshold-count: "2"
+    alb.ingress.kubernetes.io/unhealthy-threshold-count: "3"
+    alb.ingress.kubernetes.io/load-balancer-attributes: "idle_timeout.timeout_seconds=60,routing.http2.enabled=true"
+spec:
+  rules:
+    - host: {{ required "ingress.host is required" .Values.ingress.host | quote }}
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: pdvd-backend
+                port:
+                  number: 8080
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "microservice.name" . }}
+                port:
+                  number: 8080
 
 {{- else if eq $ingressType "kind" }}
 apiVersion: networking.k8s.io/v1
@@ -59,7 +112,7 @@ kind: Ingress
 metadata:
   name: {{ include "microservice.name" . }}-ingress
   labels:
-    app: {{ include "microservice.name" . }}
+    {{- include "microservice.labels" . | nindent 4 }}
 spec:
   ingressClassName: "traefik"
   rules:
@@ -79,5 +132,8 @@ spec:
                 name: {{ include "microservice.name" . }}
                 port:
                   number: 8080
+
+{{- else }}
+{{- fail (printf "ingress.type must be one of: glb, alb, kind — got %q" $ingressType) }}
 {{- end }}
 ---
