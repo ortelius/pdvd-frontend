@@ -8,7 +8,7 @@ COPY . .
 
 # hadolint ignore=DL3041,DL3016
 RUN rm -f package-lock.json; \
-    curl -fsSL https://rpm.nodesource.com/setup_23.x | bash -; \
+    curl -fsSL https://rpm.nodesource.com/setup_24.x | bash -; \
     dnf install nodejs -y; \
     npm install -g npm; \
     npm install --legacy-peer-deps; \
