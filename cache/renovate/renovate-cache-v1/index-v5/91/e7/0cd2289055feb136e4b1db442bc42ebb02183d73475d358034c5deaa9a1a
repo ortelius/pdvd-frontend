@@ -1,2 +1,2 @@
 
-83b2a097c106bb7c1d3a3b5e9074bb1090420f29	{"key":"datasource-docker-architecture-cache-decorator:https://public.ecr.aws:amazonlinux/amazonlinux@sha256:50a58a006d3381e38160fc5bb4bbefa68b74fcd70dde798f68667aac24312f20","integrity":"sha512-RI+QW7E5WiRQwSSTOZzXqzk09cwgfiYEwrcj7Vh17vecEQKc6R6Y7rhu3L4rCELQS3b2COpcsT/rOss7xW5/qA==","time":1775465307913,"size":145}
+c50d2edde668a21240112c04ac7502b168a90bf0	{"key":"datasource-docker-architecture-cache-decorator:https://public.ecr.aws:amazonlinux/amazonlinux@sha256:50a58a006d3381e38160fc5bb4bbefa68b74fcd70dde798f68667aac24312f20","integrity":"sha512-pZQa2KrCl4cogKkLNBNzl9z85GMeZJCDI7nKXXtGztPjztcp9P+AD4xRhjhEgH5J89j84Zcq8iIiOxM2dx+Ddw==","time":1775551279382,"size":145}
