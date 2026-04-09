@@ -383,7 +383,7 @@ export default function ProfilePage() {
                               <ol className="list-decimal list-inside space-y-1 ml-1 opacity-90">
                                 <li>Go to your <strong>GitHub Settings</strong> (or Organization Settings).</li>
                                 <li>Navigate to <strong>Applications</strong> &gt; <strong>Installed GitHub Apps</strong>.</li>
-                                <li>Click <strong>Configure</strong> next to the Ortelius/PDVD app.</li>
+                                <li>Click <strong>Configure</strong> next to the Ortelius app.</li>
                                 <li>Scroll down to <strong>Repository access</strong> and select the desired repositories.</li>
                               </ol>
                               <a 

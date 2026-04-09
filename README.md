@@ -1,6 +1,6 @@
-# Ortelius Post-Deployment Vulnerability Dashboard (PDVD)
+# Ortelius Post-Deployment Vulnerability Dashboard
 
-The Ortelius PDVD provides a production-grade security posture dashboard focused on **post-deployment** vulnerability management. Unlike traditional pre-deployment scanning, this system continuously monitors what's actually running in production environments and tracks remediation effectiveness over time.
+Ortelius provides a production-grade security posture dashboard focused on **post-deployment** vulnerability management. Unlike traditional pre-deployment scanning, this system continuously monitors what's actually running in production environments and tracks remediation effectiveness over time.
 
 ---
 
@@ -20,7 +20,7 @@ The Ortelius PDVD provides a production-grade security posture dashboard focused
    - Select which repositories to grant access to
 4. **Configure Repository Access**:
    - Visit [GitHub Settings > Applications > Installed GitHub Apps](https://github.com/settings/installations)
-   - Click "Configure" next to the Ortelius/PDVD app
+   - Click "Configure" next to the Ortelius app
    - Under "Repository access", select the repositories you want to track
    - Click "Save"
 5. **View Your Data**: Your GitHub releases and their security posture will now appear in the Organizations and Dashboard views
@@ -169,7 +169,7 @@ The frontend communicates with the backend via GraphQL queries for:
 ## Community & Contributing
 
 We welcome contributions! Please see:
-- GitHub Issues: [https://github.com/ortelius/pdvd-frontend/issues](https://github.com/ortelius/pdvd-frontend/issues)
+- GitHub Issues: [https://github.com/ortelius/frontend/issues](https://github.com/ortelius/frontend/issues)
 - Contributing Guide: `CONTRIBUTING.md`
 - Code of Conduct: `CODE_OF_CONDUCT.md`
 
@@ -183,15 +183,15 @@ We welcome contributions! Please see:
 
 ### Related Repositories
 
-- **Backend API**: [https://github.com/ortelius/pdvd-backend](https://github.com/ortelius/pdvd-backend)
+- **Backend API**: [https://github.com/ortelius/ortelius](https://github.com/ortelius/ortelius)
 - **Ortelius Platform**: [https://github.com/ortelius/ortelius](https://github.com/ortelius/ortelius)
 
 ### Local Development
 
 1. **Clone the repository**:
 ```bash
-git clone https://github.com/ortelius/pdvd-frontend
-cd pdvd-frontend
+git clone https://github.com/ortelius/frontend
+cd frontend
 ```
 
 2. **Install dependencies**:

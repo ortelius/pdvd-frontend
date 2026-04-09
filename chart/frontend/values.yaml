@@ -1,14 +1,14 @@
-# Default values for pdvd-frontend.
-# Overridden per-cluster by clusters/<env>/pdvd/values.yaml (plain)
-# and clusters/<env>/pdvd/secrets.enc.yaml (SOPS) in the pdvd-platform repo.
+# Default values for frontend.
+# Overridden per-cluster by clusters/<env>/ortelius/values.yaml (plain)
+# and clusters/<env>/ortelius/secrets.enc.yaml (SOPS) in the platform repo.
 #
-# pdvd-frontend has no secrets of its own — all sensitive values belong
-# to pdvd-backend and smtp.  This section is intentionally plain.
+# frontend has no secrets of its own — all sensitive values belong
+# to ortelius and smtp.  This section is intentionally plain.
 
 replicaCount: 1
 
 image:
-  repository: quay.io/ortelius/pdvd-frontend
+  repository: quay.io/ortelius/frontend
   tag: main-v10.0.92-g2eebd3
   pullPolicy: Always
 
@@ -21,10 +21,10 @@ ingress:
   type: glb
   host: "app.deployhub.com"
 
-  # GKE GLB — set in clusters/gke/pdvd/values.yaml
+  # GKE GLB — set in clusters/gke/ortelius/values.yaml
   staticIP: "static-app-ip"
 
-  # AWS ALB — set in clusters/eks/pdvd/values.yaml
+  # AWS ALB — set in clusters/eks/ortelius/values.yaml
   # certificateArn and subnets come from Terraform outputs; they are
   # plain values (not secrets) so they live in values.yaml, not secrets.enc.yaml
   certificateArn: ""   # arn:aws:acm:<region>:<account>:certificate/<id>

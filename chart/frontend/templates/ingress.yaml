@@ -1,11 +1,11 @@
 ---
 {{/*
-  Ingress type is set per-cluster in clusters/<env>/pdvd/values.yaml (plain).
+  Ingress type is set per-cluster in clusters/<env>/ortelius/values.yaml (plain).
   No ingress values come from secrets — cert ARNs, subnet IDs, hostnames are
   all non-sensitive infrastructure identifiers.
 
-  glb  → GKE Global Load Balancer  (clusters/gke/pdvd/values.yaml)
-  alb  → AWS Application LB        (clusters/eks/pdvd/values.yaml)
+  glb  → GKE Global Load Balancer  (clusters/gke/ortelius/values.yaml)
+  alb  → AWS Application LB        (clusters/eks/ortelius/values.yaml)
   kind → local Traefik              (dev only)
 */}}
 {{- $ingressType := default "glb" .Values.ingress.type }}
@@ -32,7 +32,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: pdvd-backend
+                name: ortelius
                 port:
                   number: 8080
           - path: /
@@ -77,9 +77,9 @@ metadata:
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
     alb.ingress.kubernetes.io/ssl-redirect: "443"
     alb.ingress.kubernetes.io/ssl-policy: "ELBSecurityPolicy-TLS13-1-2-2021-06"
-    # Plain value — comes from acm_certificate_arn via clusters/eks/pdvd/values.yaml
+    # Plain value — comes from acm_certificate_arn via clusters/eks/ortelius/values.yaml
     alb.ingress.kubernetes.io/certificate-arn: {{ required "ingress.certificateArn is required for ALB" .Values.ingress.certificateArn | quote }}
-    # Plain value — comes from public_subnet_ids via clusters/eks/pdvd/values.yaml
+    # Plain value — comes from public_subnet_ids via clusters/eks/ortelius/values.yaml
     alb.ingress.kubernetes.io/subnets: {{ required "ingress.subnets is required for ALB" .Values.ingress.subnets | quote }}
     alb.ingress.kubernetes.io/healthcheck-path: "/"
     alb.ingress.kubernetes.io/healthcheck-interval-seconds: "15"
@@ -97,7 +97,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: pdvd-backend
+                name: ortelius
                 port:
                   number: 8080
           - path: /
@@ -124,7 +124,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: pdvd-backend
+                name: ortelius
                 port:
                   number: 8080
           - path: /

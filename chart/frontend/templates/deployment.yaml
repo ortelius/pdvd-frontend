@@ -22,7 +22,7 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
-            # Plain values — set in clusters/<env>/pdvd/values.yaml
+            # Plain values — set in clusters/<env>/ortelius/values.yaml
             - name: RUNTIME_GRAPHQL_ENDPOINT
               value: {{ required "graphqlEndpoint is required" .Values.graphqlEndpoint | quote }}
             - name: RUNTIME_REST_ENDPOINT
